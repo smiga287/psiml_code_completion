@@ -1,0 +1,5 @@
+name: code_completion
+dependencies:
+    - numpy
+    - pandas
+    - pytorch
