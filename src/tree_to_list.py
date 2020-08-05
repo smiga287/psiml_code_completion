@@ -32,10 +32,10 @@ def dfs(code, index, hasparent, next):
 
 def solve():
     global bio, res, codes
-    with open('.\data\\temp.json') as json_file:
+    with open('.\data\\python100k_train.json') as json_file:
         str = json_file.read().split('\n')
         str = str[:-1]
-        codes = [json.loads(str[0])]
+        codes = [json.loads(i) for i in str]
         for i in range(len(codes)):
 
             bio = [False] * len(codes[i])
