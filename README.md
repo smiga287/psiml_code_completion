@@ -9,14 +9,14 @@ The following command will setup the `conda` environment.
 $ source ./init.sh
 ```
 
-If you also want to download the needed dataset you can pass the optional `--with-dataset` flag 
+If you also want to download the needed dataset you can pass the optional `--with-dataset` flag.
 ```bash
 $ source ./init.sh --with-dataset
 ```
 
 ## Updating dependencies
 
-1. Change the `environment.yml` file according to the [docs](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#updating-an-environment)
+1. Change the `environment.yml` file according to the [docs](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#updating-an-environment).
 2. Run the following command
 ```bash
 $ source ./update_dependencies.sh
