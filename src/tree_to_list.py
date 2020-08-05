@@ -3,30 +3,30 @@ import sys
 from ASTNode import ASTNode
 
 codes = []
-bio = [False]*100
+bio = [False]
 res = []
 
-def dfs(code, index, hasparent, next):
+def dfs(index, hasparent, next):
     global codes,bio,res
     if bio[index]:
         return
     bio[index] = True
     prev= None
     val = 'EMPTY'
-    if('value' in codes[code][index]):
-        val = codes[code][index]['value']
-    res.append([codes[code][index]['type'], val, hasparent, next])
+    if('value' in codes[index]):
+        val = codes[index]['value']
+    res.append([codes[index]['type'], val, hasparent, next])
 
-    if 'children' not in codes[code][index]:
+    if 'children' not in codes[index]:
         return
     
-    for i in codes[code][index]['children']:
+    for i in codes[index]['children']:
         if(prev!=None):
             if(bio[prev]):
                 continue
-            dfs(code, prev, len(codes[code][prev]['children'])>0, True)
+            dfs(prev, 'children' in codes[prev], True)
         prev=i
-        dfs(code, prev, 'children' in codes[code][prev], False)
+    dfs(prev, 'children' in codes[prev], False)
         
 
 
@@ -35,21 +35,21 @@ def solve():
     with open('.\data\\python100k_train.json') as json_file:
         str = json_file.read().split('\n')
         str = str[:-1]
-        codes = [json.loads(i) for i in str]
-        for i in range(len(codes)):
+        #codes = [json.loads(i) for i in str]
+        for i in range(len(str)):
+            codes = json.loads(str[i])
+            bio = [False] * len(codes)
 
-            bio = [False] * len(codes[i])
-
-            for j in range(len(codes[i])):
+            for j in range(len(codes)):
                 if bio[j]:
                     continue
-                dfs(i, j, 'children' in codes[i][j], False)
+                dfs( j, 'children' in codes[j], False)
 
             res.append(["EOF", 'EMPTY', False, False])
         
 
 def to_txt():
-    with open('.\data\\vector_of_nodes.json', 'w') as f:
+    with open('.\data\\vector_of_nodes_train.json', 'w') as f:
         json.dump(res, f)
 
 
