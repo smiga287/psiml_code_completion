@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import sys
 import json as json
@@ -142,6 +142,6 @@ if __name__ == "__main__":
     if len(sys.argv) != 2:
         PrintUsage()
     try:
-        print parse_file(sys.argv[1])
+        print(parse_file(sys.argv[1]))
     except (UnicodeEncodeError, UnicodeDecodeError):
         pass
