@@ -6,14 +6,19 @@ import torch.nn.functional as F
 import torch.optim as optim
 from LSTMTagger import LSTMTagger
 import preparation
+from MyDataset import MyDataset
 
 EMBEDDING_DIM = 100
 HIDDEN_DIM = 1500
 NUM_EPOCHS = 2
 LAYER_NUM = 1
+BATCH_SIZE= 16
 tag_to_idx, idx_to_tag = preparation.get_dict_tags()
 val_to_idx, idx_to_val = preparation.get_dict_val()
-training_data = None
+
+data = preparation.get_smal_ds()
+
+training_data = torch.utils.data.DataLoader(MyDataset(data, 50), BATCH_SIZE, shuffle=True)
 test_data = None
 val_data = None
 
@@ -34,7 +39,7 @@ for epoch in range(NUM_EPOCHS):
     loss_sum = 0
     cnt = 0
     for sentence, y in training_data:
-
+        #todo: put imput to GPU and devide UNK from others 
         model_tag.zero_grad()
 
         y_pred = model_tag(sentence)
@@ -46,6 +51,7 @@ for epoch in range(NUM_EPOCHS):
         if(cnt%100 == 0):
             print(f"current number of batches{cnt}, loss: {loss_sum/cnt}",'\n')
         loss.backward()
+        nn.utils.clip_grad_value_(model_tag.parameters(), 5.0)
         optimizer.step()
     
     model_tag.eval()
