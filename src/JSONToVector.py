@@ -1,13 +1,17 @@
 import json
 import sys
+import pickle
+
+ROOT_PATH = "D://data//"
 
 class JSONToVector():
-    def __init__(self, src_path: str, dest_path: str):
+    def __init__(self, src: str, dest: str):
+        self.root_path = ROOT_PATH
         self.codes = []
         self.seen = set()
         self.res = []
-        self.src_path = src_path
-        self.dest_path = dest_path
+        self.src_path = f"{self.root_path}{src}" 
+        self.dest_path = f"{self.root_path}{dest}"
 
     def solve(self):
         json_list = self.parse_json_lines()
@@ -52,16 +56,16 @@ class JSONToVector():
                 data.append(json.loads(line))
         return data
 
-    def export_json(self):
-        with open(self.dest_path, 'w') as dest_file:
-            json.dump(self.res, dest_file)
+    def export_pickle(self):
+        with open(self.dest_path, 'wb') as dest_file:
+            pickle.dump(self.res, dest_file)
 
 
 # Regresioni test izmedju nove i stare verzije
 def test_for_similarity(src, dest, b="D://data//vector_of_nodes_eval.json"):
     jtv = JSONToVector(src, dest)
     jtv.solve()
-    C = 50000
+    C = 40000
     json_data = json.dumps(jtv.res[:2000])[:C]
     with open(b) as original:
         s = original.read(C)
