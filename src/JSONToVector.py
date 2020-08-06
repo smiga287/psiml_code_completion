@@ -61,7 +61,7 @@ class JSONToVector():
 def test_for_similarity(src, dest, b="D://data//vector_of_nodes_eval.json"):
     jtv = JSONToVector(src, dest)
     jtv.solve()
-    C = 50000
+    C = 40000
     json_data = json.dumps(jtv.res[:2000])[:C]
     with open(b) as original:
         s = original.read(C)
