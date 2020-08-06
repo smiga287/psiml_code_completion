@@ -9,7 +9,7 @@ def preprocess_dataset(dataset, name):
     json_to_vec = JSONToVector(*dataset)
     json_to_vec.solve()
     json_to_vec.export_pickle()
-    serialize_dicts(get_tag_dicts(json_to_vec.res), name)
+    serialize_dicts(get_tag_dicts(), name)
 
 
 def preprocess_large_datasets():
@@ -22,18 +22,23 @@ def preprocess_large_datasets():
 
 def preprocess_small_dataset():
     python_1k = ('python1k.json', 'python1k_vector.pickle')
-    preprocess_datasets(python_1k, python_1k)
+    preprocess_dataset(python_1k, 'python_1k')
+
+
+def get_dict_names(filename):
+    return f"{filename}_tag_to_idx", f"{filename}_idx_to_tag"
 
 
 def serialize_dicts(dicts, filename):
-    names = [f"{filename}_tag_to_idx", f"{filename}_idx_to_tag"]
+    names = get_dict_names(filename)
     for d, name in zip(dicts, names):
-        with open(f'{name}.pickle', 'wb') as f:
-            pickle.dumps(d, f)
+        with open(f'D://data//{name}.pickle', 'wb') as f:
+            pickle.dump(d, f)
 
 
-def get_tag_dicts():
-    with open(tag_to_idx_path, 'rb') as tti_file, open(idx_to_tag_path, 'rb') as itt_file:
+def get_tag_dicts(filename="python100k"):
+    tag_to_idx_path, idx_to_tag_path = map(lambda name: f'{name}.pickle', get_dict_names(filename))
+    with open(f'D://data//{tag_to_idx_path}', 'rb') as tti_file, open(f'D://data//{idx_to_tag_path}', 'rb') as itt_file:
         return pickle.load(tti_file), pickle.load(itt_file)
 
 
@@ -51,14 +56,17 @@ def create_tag_dicts(vector):
     return tag_to_idx, idx_to_tag
 
 
-def create_small_dataset(K = 1):
-    json_to_vec = JSONToVector('python100k_train.json', 'python100k_train_vector.pickle')
-    json_to_vec.solve()
-    dataset = random.sample(json_to_vec.res, 1000 * K)
-    dataset_exporter = JSONToVector(None, 'python1k.pickle')
-    dataset_exporter.res = dataset
-    dataset_exporter.export_pickle()
+def create_small_dataset():
+    with open('D://data//python100k_train_vector.pickle', 'rb') as large_file, open('D://data//python1k.pickle', 'wb') as small_file:
+        large = pickle.load(large_file)
+        small = large[:300000]
+        pickle.dump(small, small_file)
 
+def get_small_dataset():
+    with open('D://data//python1k.pickle', 'rb') as f:
+        return pickle.load(f)
 
 if __name__ == '__main__':
-    create_small_dataset()
+    dataset = get_small_dataset()
+    tti, itt = get_tag_dicts()
+    print()
