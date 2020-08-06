@@ -4,17 +4,16 @@ import torch.nn.functional as F
 
 class LSTMTagger(nn.Module):
 
-    def __init__(self, embedding_dim, hidden_dim , vocab_size, tagset_size):
+    def __init__(self, embedding_dim, hidden_dim , vocab_size, tagset_size, layer_cnt):
         super(LSTMTagger, self).__init__()
         self.hidden_dim = hidden_dim
 
         self.word_embeddings = nn.Embedding(vocab_size, embedding_dim)
 
-        # The LSTM takes word embeddings as inputs, and outputs hidden states
-        # with dimensionality hidden_dim.
-        self.lstm = nn.LSTM(embedding_dim, hidden_dim, batch_first=True)
+
+        self.lstm = nn.LSTM(embedding_dim, hidden_dim, batch_first=True, num_layers=layer_cnt)
         
-        # The linear layer that maps from hidden state space to tag space
+
         self.hidden2tag = nn.Linear(hidden_dim, tagset_size)
 
     def forward(self, sentence):

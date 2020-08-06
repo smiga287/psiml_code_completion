@@ -10,13 +10,14 @@ import preparation
 EMBEDDING_DIM = 100
 HIDDEN_DIM = 1500
 NUM_EPOCHS = 2
+LAYER_NUM = 1
 tag_to_idx, idx_to_tag = preparation.get_dict_tags()
 val_to_idx, idx_to_val = preparation.get_dict_val()
 training_data = None
 test_data = None
 val_data = None
 
-model_tag = LSTMTagger(EMBEDDING_DIM, HIDDEN_DIM, len(tag_to_idx), len(tag_to_idx))
+model_tag = LSTMTagger(EMBEDDING_DIM, HIDDEN_DIM, len(tag_to_idx), len(tag_to_idx), LAYER_NUM)
 loss_function = nn.NLLLoss()
 optimizer = optim.Adam(model_tag.parameters())
 
