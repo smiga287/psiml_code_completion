@@ -1,9 +1,43 @@
 import json
 import pickle
 import sys
+import random
 from JSONToVector import JSONToVector
 
-def get_tag_dicts(vector):
+
+def preprocess_dataset(dataset, name):
+    json_to_vec = JSONToVector(*dataset)
+    json_to_vec.solve()
+    json_to_vec.export_pickle()
+    serialize_dicts(get_tag_dicts(json_to_vec.res), name)
+
+
+def preprocess_large_datasets():
+    python_50k_eval = ('python50k_eval.json', 'python50k_eval_vector.pickle')
+    python_100k_test = ('python100k_train.json', 'python100k_train_vector.pickle')
+
+    for dataset, name in [(python_50k_eval, 'python50k'), (python_100k_test, 'python100k')]:
+        preprocess_dataset(dataset, name)
+
+
+def preprocess_small_dataset():
+    python_1k = ('python1k.json', 'python1k_vector.pickle')
+    preprocess_datasets(python_1k, python_1k)
+
+
+def serialize_dicts(dicts, filename):
+    names = [f"{filename}_tag_to_idx", f"{filename}_idx_to_tag"]
+    for d, name in zip(dicts, names):
+        with open(f'{name}.pickle', 'wb') as f:
+            pickle.dumps(d, f)
+
+
+def get_tag_dicts():
+    with open(tag_to_idx_path, 'rb') as tti_file, open(idx_to_tag_path, 'rb') as itt_file:
+        return pickle.load(tti_file), pickle.load(itt_file)
+
+
+def create_tag_dicts(vector):
     tag_to_idx = {}
     idx_to_tag = {}
 
@@ -15,33 +49,16 @@ def get_tag_dicts(vector):
             idx += 1
 
     return tag_to_idx, idx_to_tag
-    
-
-def preprocess_datasets(datasets, names):
-    for dataset in datasets:
-        vector = JSONToVector(*dataset)
-        vector.solve()
-        vector.export_json()
-        serialize_dicts(get_tag_dicts(vector.res), names)
 
 
-def preprocess_large_datasets():
-    python_50k_eval = ('D://data//python50k_eval.json', 'D://data//python50k_eval_vector.json')
-    python_100k_test = ('D://data//python100k_train.json', 'D://data//python100k_train_vector.json')
-
-    preprocess_datasets([python_50k_eval, python_100k_test], ['python50k', 'python100k'])
-
-
-def preprocess_small_datasets():
-    python_1k = ('D://data//python1k.json', 'D://data//python1k_vector.json')
-    preprocess_datasets([python_1k], ['python1k'])
-
-
-def serialize_dicts(dicts, filenames):
-    for d, fn in zip(dicts, filenames):
-        with open(f'{fn}.pickle', 'wb') as f:
-            pickle.dumps(d, f)
+def create_small_dataset(K = 1):
+    json_to_vec = JSONToVector('python100k_train.json', 'python100k_train_vector.pickle')
+    json_to_vec.solve()
+    dataset = random.sample(jason_to_vec.res, 1000 * K)
+    dataset_exporter = JSONToVector(dest='python1k.pickle')
+    dataset_exporter.res = dataset
+    dataset_exporter.export_pickle()
 
 
 if __name__ == '__main__':
-    preprocess_small_datasets()
+    create_small_dataset()
