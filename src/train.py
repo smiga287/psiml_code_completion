@@ -16,7 +16,7 @@ BATCH_SIZE= 16
 tag_to_idx, idx_to_tag = preprocess.get_tag_dicts()
 #val_to_idx, idx_to_val = preprocess.get_dict_val()
 
-data = preprocess.get_smal_ds()
+data = [(tag_to_idx[(i[0],i[2],i[3])], 0) for i in preprocess.get_small_dataset()]
 
 training_data = torch.utils.data.DataLoader(MyDataset(data, 50), BATCH_SIZE, shuffle=True)
 test_data = None
@@ -52,7 +52,7 @@ for epoch in range(NUM_EPOCHS):
         loss_sum+=loss
         cnt+=1
         if(cnt%100 == 0):
-            print(f"current number of batches{cnt}, loss: {loss_sum/cnt}",'\n')
+            print(f"current number of batches{cnt}, loss: {loss/y_tag.size(0)}",'\n')
         loss.backward()
         nn.utils.clip_grad_value_(model_tag.parameters(), 5.0)
         optimizer.step()
