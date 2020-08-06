@@ -5,8 +5,10 @@ from ASTNode import ASTNode
 codes = []
 bio = [False]
 res = []
+READ_FROM = 'D://data//python50k_eval.json'
+WRITE_TO = 'D://data//vector_of_nodes_eval.json'
 
-def dfs(index, hasparent, next):
+def dfs(index, haschildren, next):
     global codes,bio,res
     if bio[index]:
         return
@@ -15,9 +17,9 @@ def dfs(index, hasparent, next):
     val = 'EMPTY'
     if('value' in codes[index]):
         val = codes[index]['value']
-    res.append([codes[index]['type'], val, hasparent, next])
+    res.append([codes[index]['type'], val, haschildren, next])
 
-    if 'children' not in codes[index]:
+    if not haschildren:
         return
     
     for i in codes[index]['children']:
@@ -32,7 +34,7 @@ def dfs(index, hasparent, next):
 
 def solve():
     global bio, res, codes
-    with open('.\data\\python100k_train.json') as json_file:
+    with open(READ_FROM) as json_file:
         str = json_file.read().split('\n')
         str = str[:-1]
         #codes = [json.loads(i) for i in str]
@@ -49,7 +51,7 @@ def solve():
         
 
 def to_txt():
-    with open('.\data\\vector_of_nodes_train.json', 'w') as f:
+    with open(WRITE_TO, 'w') as f:
         json.dump(res, f)
 
 
