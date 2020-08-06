@@ -62,6 +62,7 @@ def create_small_dataset():
         small = large[:300000]
         pickle.dump(small, small_file)
 
+
 def get_small_dataset():
     with open('D://data//python1k.pickle', 'rb') as f:
         return pickle.load(f)

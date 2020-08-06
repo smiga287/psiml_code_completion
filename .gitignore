@@ -2,3 +2,5 @@ env/
 data/
 .vscode/
 src/__pycache__
+smiga_git.sh
+novak_git.sh
