@@ -12,14 +12,14 @@ class LSTMTagger(nn.Module):
 
         # The LSTM takes word embeddings as inputs, and outputs hidden states
         # with dimensionality hidden_dim.
-        self.lstm, _ = nn.LSTM(embedding_dim, hidden_dim, batch_first=True)
+        self.lstm = nn.LSTM(embedding_dim, hidden_dim, batch_first=True)
         
         # The linear layer that maps from hidden state space to tag space
         self.hidden2tag = nn.Linear(hidden_dim, tagset_size)
 
     def forward(self, sentence):
         embeds = self.word_embeddings(sentence)
-        lstm_out, self.hidden = self.lstm(embeds.view(len(sentence), 1, -1), self.hidden)
-        tag_space = self.hidden2tag(lstm_out.view(len(sentence), -1))
+        lstm_out, _ = self.lstm(embeds)
+        tag_space = self.hidden2tag(lstm_out.view(sentence.size(0), -1))
         tag_scores = F.log_softmax(tag_space, dim=1)
         return tag_scores
