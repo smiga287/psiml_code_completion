@@ -1,6 +1,5 @@
 import torch
 import numpy as np
-import pandas as pd
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
@@ -8,15 +7,16 @@ from LSTMTagger import LSTMTagger
 import preprocess
 from MyDataset import MyDataset
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 EMBEDDING_DIM = 100
 HIDDEN_DIM = 1500
 NUM_EPOCHS = 2
 LAYER_NUM = 1
-BATCH_SIZE= 16
+BATCH_SIZE= 128
 tag_to_idx, idx_to_tag = preprocess.get_tag_dicts()
 #val_to_idx, idx_to_val = preprocess.get_dict_val()
 
-data = [(tag_to_idx[(i[0],i[2],i[3])], 0) for i in preprocess.get_small_dataset()]
+data = torch.Tensor([(tag_to_idx[(i[0],i[2],i[3])], 0) for i in preprocess.get_small_dataset()])
 
 training_data = torch.utils.data.DataLoader(MyDataset(data, 50), BATCH_SIZE, shuffle=True)
 test_data = None
@@ -28,8 +28,9 @@ optimizer = optim.Adam(model_tag.parameters())
 
 
 #-----------putting everything on GPU---------
-#model_tag.cuda()
+model_tag.cuda()
 #---------------------------------------------
+
 
 
 for epoch in range(NUM_EPOCHS): 
@@ -40,19 +41,24 @@ for epoch in range(NUM_EPOCHS):
     cnt = 0
     for sentence in training_data:
         #todo: put imput to GPU and devide UNK from others
-
+        size = int(sentence.size(0)*(sentence.size(1)-1))
         model_tag.zero_grad()
-        sentence_tag = sentence[:-1,0]
-        y_tag = sentence[1:, 0]
+        sentence_tag = sentence[:-1,:,0].to(device)
+        y_tag = sentence[1:, :,0].to(device)
 
         y_pred_tag = model_tag(sentence_tag)
+        #y_pred_tag = y_pred_tag.argmax(dim=2)
+        correct = (y_pred_tag.argmax(dim=2) == y_tag).sum().item()
 
-        loss = loss_function(y_pred_tag, y_tag)
+        loss = 0
+        for x in range(BATCH_SIZE-1):
+            loss_x = loss_function(y_pred_tag[x], y_tag[x].long())
+            loss += loss_x
 
         loss_sum+=loss
         cnt+=1
-        if(cnt%100 == 0):
-            print(f"current number of batches{cnt}, loss: {loss/y_tag.size(0)}",'\n')
+        if(cnt%10 == 0):
+            print(f"current number of batches{cnt}, loss: {loss/y_tag.size(0)}", f'accuracy:{100*(correct/size)}')
         loss.backward()
         nn.utils.clip_grad_value_(model_tag.parameters(), 5.0)
         optimizer.step()

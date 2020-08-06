@@ -3,5 +3,7 @@ dependencies:
     - numpy
     - pandas
     - pytorch
+    - cudatoolkit=10.2
     - matplotlib
     - scikit-learn
+
