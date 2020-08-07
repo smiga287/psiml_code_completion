@@ -10,10 +10,17 @@ class JSONToVector:
         self.res = []
         self.src_path = f"D://data//{name}.json"
         self.dest_path = f"D://data//{name}_vector.pickle"
-        self.solve()
+        if self.export_exists():
+            self.load_data()
+        else:
+            self.solve()
 
     def get_data(self):
         return self.res
+
+    def load_data(self):
+        with open(self.src_path, "rb") as f:
+            self.res = pickle.load(f)
 
     def solve(self):
         json_list = self.parse_json_lines()
