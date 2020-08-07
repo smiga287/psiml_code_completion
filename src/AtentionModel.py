@@ -8,13 +8,19 @@ class LSTMTagger(nn.Module):
         super(LSTMTagger, self).__init__()
         self.hidden_dim = hidden_dim
 
-        self.word_embeddings = nn.Embedding(vocab_size, embedding_dim)
-
+        self.tag_embeddings = nn.Embedding(vocab_size_tag, embedding_dim_tag)
+        self.val_embeddings = nn.Embedding(vocab_size_val, embedding_dim_val)
+        self.embedding_dim = self.embedding_dim_tag+self.embedding_dim_val
+        #***TODO****
         self.h_0 = torch.nn.Parameter(torch.randn(hidden_dim))
         self.c_0 = torch.nn.Parameter(torch.randn(embedding_dim))
 
-        self.lstm = nn.LSTM(embedding_dim, hidden_dim, batch_first=True, num_layers=layer_cnt)
+        self.lstm = nn.LSTM( embedding_dim, hidden_dim, batch_first=True, num_layers=layer_cnt)
         
+        self.wm = nn.Linear(hidden_dim, hidden_dim)
+        self.wh = nn.Linear(hidden_dim, hidden_dim)
+
+        self.v = nn.Linear(hidden_dim, 1)
 
         self.hidden2tag = nn.Linear(hidden_dim, tagset_size)
 

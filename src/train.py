@@ -18,12 +18,12 @@ def train():
     HIDDEN_DIM = 1500
     NUM_EPOCHS = 1
     LAYER_NUM = 1
-    BATCH_SIZE= 1024
+    BATCH_SIZE= 512
     tag_to_idx, idx_to_tag = preprocess.get_tag_dicts()
     val_to_idx, idx_to_val = preprocess.get_val_dicts()
 
-    data = torch.Tensor([(tag_to_idx[(i[0],i[2],i[3])], 0) for i in (preprocess.get_small_dataset()[:250000])])
-    data_val = torch.Tensor([(tag_to_idx[(i[0],i[2],i[3])], 0) for i in (preprocess.get_small_dataset()[250000:])])
+    data = torch.Tensor([(tag_to_idx[(i[0],i[2],i[3])], 0) for i in (preprocess.get_train_dataset()[:5000000])])
+    data_val = torch.Tensor([(tag_to_idx[(i[0],i[2],i[3])], 0) for i in (preprocess.get_small_dataset()[5000000:5500000])])
     training_data = torch.utils.data.DataLoader(MyDataset(data, 50), BATCH_SIZE, shuffle=True, drop_last=True, num_workers=8)
     test_data = None
     val_data = torch.utils.data.DataLoader(MyDataset(data_val, 50), BATCH_SIZE, shuffle=False, drop_last=True, num_workers=8)
@@ -59,13 +59,13 @@ def train():
             correct = (y_pred_tag.argmax(dim=1) == y_tag).sum().item()
 
             loss = loss_function(y_pred_tag, y_tag.long())
-            summary_writer.add_scalar("Critic loss", loss, global_step)
+            summary_writer.add_scalar("Train loss", loss, global_step)
 
             loss_sum+=loss
             cnt+=1
             #if(cnt%10 == 0):
                 #print(f"current number of batches{cnt}, loss: {loss}", f'accuracy:{100*(correct/size)}')
-                
+            summary_writer.add_scalar("accuracy", 100*(correct/size), global_step)    
             loss.backward()
             nn.utils.clip_grad_value_(model_tag.parameters(), 5.0)
             optimizer.step()
@@ -77,7 +77,7 @@ def train():
         cnt = 0
         ep_cnt = 0
         with torch.no_grad():
-            for sentence in val_data:
+            for i, sentence in tqdm(enumerate(val_data), total=len(val_data), desc=f"Epoch: {epoch}", unit="batches"):
 
                 sentence_tag = sentence[:, :-1, 0].to(device)
                 y_tag = sentence[:, -1, 0].to(device)
@@ -87,7 +87,7 @@ def train():
                 correct += (y_pred_tag.argmax(dim=1) == y_tag).sum().item()
 
                 loss = loss_function(y_pred_tag, y_tag.long())
-                summary_writer.add_scalar("Generator loss", loss, global_step)
+                summary_writer.add_scalar("val_loss", loss, global_step)
                 loss_sum+=loss
 
                 ep_cnt+=1
