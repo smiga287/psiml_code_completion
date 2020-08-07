@@ -3,7 +3,6 @@ from ObjIdxDict import TagIdxDicts, ValIdxDicts
 
 
 TRAIN = "python100k"
-EVAL = "python100k_eval"
 TEST = "python50k"
 SMALL = "python1k"
 

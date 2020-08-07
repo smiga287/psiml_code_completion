@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from LSTMTagger import LSTMTagger
-from DataManager import DataManager, SMALL
+from DataManager import DataManager, SMALL, TRAIN
 from Dataset import Dataset
 import time
 from tqdm import tqdm
@@ -18,32 +18,32 @@ def train():
     HIDDEN_DIM = 1500
     NUM_EPOCHS = 1
     LAYER_NUM = 1
-    BATCH_SIZE = 1024
+    BATCH_SIZE = 512
 
-    small_dataset = DataManager(SMALL)
+    data_manager = DataManager(TRAIN)
 
-    tag_to_idx, idx_to_tag = small_dataset.get_tag_dicts()
-    val_to_idx, idx_to_val = small_dataset.get_val_dicts()
+    tag_to_idx, idx_to_tag = data_manager.get_tag_dicts()
+    val_to_idx, idx_to_val = data_manager.get_val_dicts()
 
     data = torch.Tensor(
         [
-            (tag_to_idx[(i[0], i[2], i[3])], 0)
-            for i in (small_dataset.get_data()[:250000])
+            (tag_to_idx[(tag, have_children, have_sibling)], 0)
+            for tag, _, have_children, have_sibling in (data_manager.get_data()[:5000000])
         ]
     )
     data_val = torch.Tensor(
         [
-            (tag_to_idx[(i[0], i[2], i[3])], 0)
-            for i in (small_dataset.get_data()[250000:])
+            (tag_to_idx[(tag, have_children, have_sibling)], 0)
+            for tag, _, have_children, have_sibling in (data_manager.get_data()[5000000:55000000])
         ]
     )
 
     training_data = torch.utils.data.DataLoader(
-        Dataset(data, 50), BATCH_SIZE, shuffle=True, drop_last=True, num_workers=8
+        Dataset(data), BATCH_SIZE, shuffle=True, drop_last=True, num_workers=8
     )
     test_data = None
     val_data = torch.utils.data.DataLoader(
-        Dataset(data_val, 50), BATCH_SIZE, shuffle=False, drop_last=True, num_workers=8,
+        Dataset(data_val), BATCH_SIZE, shuffle=False, drop_last=True, num_workers=8
     )
 
     model_tag = LSTMTagger(
