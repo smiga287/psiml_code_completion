@@ -18,7 +18,7 @@ def train():
     TAG_EMBEDDING_DIM = 32
     VAL_EMBEDDING_DIM = 64
     HIDDEN_DIM = 1500
-    NUM_EPOCHS = 1
+    NUM_EPOCHS = 1  # 8
     LAYER_NUM = 1
     BATCH_SIZE = 512
 
