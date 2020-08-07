@@ -6,4 +6,5 @@ dependencies:
     - cudatoolkit=10.2
     - matplotlib
     - scikit-learn
-
+    - pylint
+    - black
