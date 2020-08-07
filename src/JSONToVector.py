@@ -1,18 +1,19 @@
+import os
 import json
-import sys
 import pickle
-
-ROOT_PATH = "D://data//"
 
 
 class JSONToVector:
-    def __init__(self, src: str, dest: str):
-        self.root_path = ROOT_PATH
+    def __init__(self, name: str):
         self.codes = []
         self.seen = set()
         self.res = []
-        self.src_path = f"{self.root_path}{src}"
-        self.dest_path = f"{self.root_path}{dest}"
+        self.src_path = f"D://data//{name}.json"
+        self.dest_path = f"D://data//{name}_vector.pickle"
+        self.solve()
+
+    def get_data(self):
+        return self.res
 
     def solve(self):
         json_list = self.parse_json_lines()
@@ -42,7 +43,7 @@ class JSONToVector:
 
         prev = None
         for i in self.codes[idx]["children"]:
-            if prev != None and prev not in self.seen:
+            if prev is not None and prev not in self.seen:
                 self.dfs(prev, "children" in self.codes[prev], True)
             prev = i
 
@@ -52,27 +53,14 @@ class JSONToVector:
         data = []
         with open(self.src_path) as json_file:
             for idx, line in enumerate(json_file):
-                if take != None and idx == take:
+                if take is not None and idx == take:
                     break
                 data.append(json.loads(line))
         return data
 
-    def export_pickle(self):
+    def export(self):
         with open(self.dest_path, "wb") as dest_file:
             pickle.dump(self.res, dest_file)
 
-
-# Regresioni test izmedju nove i stare verzije
-def test_for_similarity(src, dest, b="D://data//vector_of_nodes_eval.json"):
-    jtv = JSONToVector(src, dest)
-    jtv.solve()
-    C = 50000
-    json_data = json.dumps(jtv.res[:2000])[:C]
-    with open(b) as original:
-        s = original.read(C)
-        for i in range(C):
-            if s[i] != json_data[i]:
-                print(s[i - 20 : i + 20])
-                print(json_data[i - 20 : i + 20])
-                break
-
+    def export_exists(self):
+        return os.path.exists(self.dest_path)
