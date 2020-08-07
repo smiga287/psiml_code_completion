@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 class LSTMTagger(nn.Module):
 
-    def __init__(self, embedding_dim, hidden_dim , vocab_size, tagset_size, layer_cnt):
+    def __init__(self, embedding_dim_tag, embedding_dim_val, hidden_dim , vocab_size, tagset_size, layer_cnt):
         super(LSTMTagger, self).__init__()
         self.hidden_dim = hidden_dim
 

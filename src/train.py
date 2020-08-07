@@ -8,6 +8,9 @@ from LSTMTagger import LSTMTagger
 import preprocess
 from MyDataset import MyDataset
 import time
+from tqdm import tqdm
+from torch.utils.tensorboard import SummaryWriter
+
 
 def train():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -15,9 +18,9 @@ def train():
     HIDDEN_DIM = 1500
     NUM_EPOCHS = 1
     LAYER_NUM = 1
-    BATCH_SIZE= 128
+    BATCH_SIZE= 1024
     tag_to_idx, idx_to_tag = preprocess.get_tag_dicts()
-    #val_to_idx, idx_to_val = preprocess.get_dict_val()
+    val_to_idx, idx_to_val = preprocess.get_val_dicts()
 
     data = torch.Tensor([(tag_to_idx[(i[0],i[2],i[3])], 0) for i in (preprocess.get_small_dataset()[:250000])])
     data_val = torch.Tensor([(tag_to_idx[(i[0],i[2],i[3])], 0) for i in (preprocess.get_small_dataset()[250000:])])
@@ -38,12 +41,14 @@ def train():
 
     for epoch in range(NUM_EPOCHS): 
 
+        summary_writer = SummaryWriter()
+
         model_tag.train()
         start_time = time.time()
         loss_sum = 0
         cnt = 0
-        for sentence in training_data:
-            
+        for i,sentence in tqdm(enumerate(training_data), total=len(training_data), desc=f"Epoch: {epoch}", unit="batches"):
+            global_step = epoch*len(training_data)+i
             size = int(sentence.size(0))
             model_tag.zero_grad()
             sentence_tag = sentence[:, :-1, 0].to(device)
@@ -54,12 +59,12 @@ def train():
             correct = (y_pred_tag.argmax(dim=1) == y_tag).sum().item()
 
             loss = loss_function(y_pred_tag, y_tag.long())
-            
+            summary_writer.add_scalar("Critic loss", loss, global_step)
 
             loss_sum+=loss
             cnt+=1
-            if(cnt%10 == 0):
-                print(f"current number of batches{cnt}, loss: {loss}", f'accuracy:{100*(correct/size)}')
+            #if(cnt%10 == 0):
+                #print(f"current number of batches{cnt}, loss: {loss}", f'accuracy:{100*(correct/size)}')
                 
             loss.backward()
             nn.utils.clip_grad_value_(model_tag.parameters(), 5.0)
@@ -82,6 +87,7 @@ def train():
                 correct += (y_pred_tag.argmax(dim=1) == y_tag).sum().item()
 
                 loss = loss_function(y_pred_tag, y_tag.long())
+                summary_writer.add_scalar("Generator loss", loss, global_step)
                 loss_sum+=loss
 
                 ep_cnt+=1
