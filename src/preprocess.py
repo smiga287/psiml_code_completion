@@ -101,6 +101,16 @@ def get_small_dataset():
         return pickle.load(f)
 
 
+def get_train_dataset():
+    with open("D://data//python100k_train_vector.pickle", "rb") as f:
+        return pickle.load(f)
+
+
+def get_eval_dataset():
+    with open("D://data//python50k_eval_vector.pickle", "rb") as f:
+        return pickle.load(f)
+
+
 if __name__ == "__main__":
     vti, itv = create_value_dicts(get_small_dataset())
     print()
