@@ -4,13 +4,14 @@ import pickle
 
 ROOT_PATH = "D://data//"
 
-class JSONToVector():
+
+class JSONToVector:
     def __init__(self, src: str, dest: str):
         self.root_path = ROOT_PATH
         self.codes = []
         self.seen = set()
         self.res = []
-        self.src_path = f"{self.root_path}{src}" 
+        self.src_path = f"{self.root_path}{src}"
         self.dest_path = f"{self.root_path}{dest}"
 
     def solve(self):
@@ -21,32 +22,32 @@ class JSONToVector():
 
             for j, code in enumerate(self.codes):
                 if j not in self.seen:
-                    self.dfs(j, 'children' in code, False)
+                    self.dfs(j, "children" in code, False)
 
-            self.res.append(['EOF', 'EMPTY', False, False])
+            self.res.append(["EOF", "EMPTY", False, False])
 
     def dfs(self, idx, has_children, has_siblings):
         if idx in self.seen:
             return
         self.seen.add(idx)
-        
-        val = 'EMPTY'
-        if 'value' in self.codes[idx]:
-            val = self.codes[idx]['value']
 
-        self.res.append([self.codes[idx]['type'], val, has_children, has_siblings])
+        val = "EMPTY"
+        if "value" in self.codes[idx]:
+            val = self.codes[idx]["value"]
+
+        self.res.append([self.codes[idx]["type"], val, has_children, has_siblings])
 
         if not has_children:
             return
 
         prev = None
-        for i in self.codes[idx]['children']:
+        for i in self.codes[idx]["children"]:
             if prev != None and prev not in self.seen:
-                self.dfs(prev, 'children' in self.codes[prev], True)
+                self.dfs(prev, "children" in self.codes[prev], True)
             prev = i
 
-        self.dfs(prev, 'children' in self.codes[prev], False)
-        
+        self.dfs(prev, "children" in self.codes[prev], False)
+
     def parse_json_lines(self, take=None):
         data = []
         with open(self.src_path) as json_file:
@@ -57,7 +58,7 @@ class JSONToVector():
         return data
 
     def export_pickle(self):
-        with open(self.dest_path, 'wb') as dest_file:
+        with open(self.dest_path, "wb") as dest_file:
             pickle.dump(self.res, dest_file)
 
 
@@ -71,10 +72,7 @@ def test_for_similarity(src, dest, b="D://data//vector_of_nodes_eval.json"):
         s = original.read(C)
         for i in range(C):
             if s[i] != json_data[i]:
-                print(s[i - 20:i + 20])
-                print(json_data[i - 20:i + 20])
+                print(s[i - 20 : i + 20])
+                print(json_data[i - 20 : i + 20])
                 break
 
-
-
-    
