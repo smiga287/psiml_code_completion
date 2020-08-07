@@ -2,6 +2,7 @@ import json
 import pickle
 import sys
 import random
+from collections import Counter
 from JSONToVector import JSONToVector
 
 
@@ -63,9 +64,27 @@ def create_tag_dicts(vector):
     return tag_to_idx, idx_to_tag
 
 
+def calc_num_of_most_freq_vals(vector):
+    return 1200
+
+
 def create_value_dicts(vector):
     val_to_idx = {}
     idx_to_val = {}
+
+    K = calc_num_of_most_freq_vals(vector)
+
+    # counts and gets K most frequent values
+    vals = [val for _, val, _, _ in vector]
+    vals_cnt = Counter(vals).most_common(K)
+
+    idx = 0
+    for val, _ in vals_cnt:
+        val_to_idx[val] = idx
+        idx_to_val[idx] = val
+        idx += 1
+
+    return val_to_idx, idx_to_val
 
 
 def create_small_dataset():
@@ -78,11 +97,10 @@ def create_small_dataset():
 
 
 def get_small_dataset():
-    with open("D://data//python1k.pickle", "rb") as f:
+    with open("./data/python1k.pickle", "rb") as f:
         return pickle.load(f)
 
 
 if __name__ == "__main__":
-    dataset = get_small_dataset()
-    tti, itt = get_tag_dicts()
+    vti, itv = create_value_dicts(get_small_dataset())
     print()
