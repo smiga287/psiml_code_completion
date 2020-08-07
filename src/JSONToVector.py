@@ -1,7 +1,7 @@
 import os
 import json
 import pickle
-
+from util import timing
 
 class JSONToVector:
     def __init__(self, name: str):
@@ -18,10 +18,12 @@ class JSONToVector:
     def get_data(self):
         return self.res
 
+    @timing
     def load_data(self):
-        with open(self.src_path, "rb") as f:
+        with open(self.dest_path, "rb") as f:
             self.res = pickle.load(f)
 
+    @timing
     def solve(self):
         json_list = self.parse_json_lines()
         for program in json_list:

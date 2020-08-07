@@ -1,8 +1,8 @@
 import pickle
 import os.path
-from abc import ABC, abstractclassmethod
+from abc import ABC, abstractmethod
 from collections import Counter
-
+from util import timing
 
 class ObjIdxDicts(ABC):
     def __init__(self, name, vector, obj_type):
@@ -36,10 +36,11 @@ class ObjIdxDicts(ABC):
 
         return self.load_dicts()
 
-    @abstractclassmethod
-    def create_dicts(cls, vector):
+    @abstractmethod
+    def create_dicts(self, vector):
         pass
 
+    @timing
     def load_dicts(self):
         obj_to_idx, idx_to_obj = self.get_dict_names()
         with open(f"D://data//{obj_to_idx}.pickle", "rb") as oti_file, open(
@@ -52,6 +53,7 @@ class TagIdxDicts(ObjIdxDicts):
     def __init__(self, name, vector):
         super().__init__(name, vector, "tag")
 
+    @timing
     def create_dicts(self, vector):
         tag_to_idx = {}
         idx_to_tag = {}
@@ -68,10 +70,11 @@ class TagIdxDicts(ObjIdxDicts):
 
 class ValIdxDicts(ObjIdxDicts):
     def __init__(self, name, vector):
+        self.K = 1200
         super().__init__(name, vector, "val")
         # Relevant number of values to have in consideration
-        self.K = 1199
-
+    
+    @timing
     def create_dicts(self, vector):
         val_to_idx = {}
         idx_to_val = {}
