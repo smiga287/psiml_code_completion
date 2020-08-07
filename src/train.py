@@ -39,7 +39,7 @@ def train():
         [
             (tag_to_idx[(tag, have_children, have_sibling)], val_to_idx[val])
             for tag, val, have_children, have_sibling in (
-                data_manager.get_data()[5000000:55000000]
+                data_manager.get_data()[5000000:5500000]
             )
         ]
     )
@@ -47,7 +47,9 @@ def train():
     training_data = torch.utils.data.DataLoader(
         Dataset(data_train), BATCH_SIZE, shuffle=True, drop_last=True, num_workers=8
     )
-    test_data = None
+
+    #test_data = None
+
     val_data = torch.utils.data.DataLoader(
         Dataset(data_val), BATCH_SIZE, shuffle=False, drop_last=True, num_workers=8
     )
@@ -75,7 +77,7 @@ def train():
         model_val.train()
         start_time = time.time()
         cnt = 0
-        for i, sentence in tqdm(
+        for i, (sentence, y) in tqdm(
             enumerate(training_data),
             total=len(training_data),
             desc=f"Epoch: {epoch}",
@@ -87,11 +89,11 @@ def train():
             model_tag.zero_grad()
             model_val.zero_grad()
 
-            sentence_tag = sentence[:, :-1, 0].to(device)
-            y_tag = sentence[:, -1, 0].to(device)
+            sentence_tag = sentence[:, :, 0].to(device)
+            y_tag = y[:, 0].to(device)
 
-            sentence_val = sentence[:, :-1, 1].to(device)
-            y_val = sentence[:, -1, 1].to(device)
+            sentence_val = sentence[:, :, 1].to(device)
+            y_val = y[:, 1].to(device)
 
             y_pred_tag = model_tag(sentence_tag)
             y_pred_val = model_val(sentence_val)
@@ -133,19 +135,19 @@ def train():
 
         ep_cnt = 0
         with torch.no_grad():
-            for i, sentence in tqdm(
+            for i, (sentence,y) in tqdm(
                 enumerate(val_data),
                 total=len(val_data),
                 desc=f"Epoch: {epoch}",
                 unit="batches",
             ):
 
-                sentence_tag = sentence[:, :-1, 0].to(device)
-                y_tag = sentence[:, -1, 0].to(device)
+                sentence_tag = sentence[:, :, 0].to(device)
+                y_tag = y[:, 0].to(device)
                 y_pred_tag = model_tag(sentence_tag)
 
-                sentence_val = sentence[:, :-1, 1].to(device)
-                y_val = sentence[:, -1, 1].to(device)
+                sentence_val = sentence[:, :, 1].to(device)
+                y_val = y[:, 1].to(device)
                 y_pred_val = model_val(sentence_val)
 
                 correct_tag += (y_pred_tag.argmax(dim=1) == y_tag).sum().item()
