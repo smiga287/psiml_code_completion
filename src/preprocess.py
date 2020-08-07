@@ -121,7 +121,7 @@ def create_small_dataset():
 
 
 def get_small_dataset():
-    with open("D://data//python1k.pickle", "rb") as f:
+    with open("D://data//python1k_vector.pickle", "rb") as f:
         return pickle.load(f)
 
 
