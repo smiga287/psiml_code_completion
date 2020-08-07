@@ -14,10 +14,10 @@ from torch.utils.tensorboard import SummaryWriter
 
 def train():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    EMBEDDING_DIM = 64
+    EMBEDDING_DIM = 64 # smanjiti na 32
     HIDDEN_DIM = 1500
-    NUM_EPOCHS = 1
-    LAYER_NUM = 1
+    NUM_EPOCHS = 1 # 8
+    LAYER_NUM = 1 
     BATCH_SIZE = 512
 
     data_manager = DataManager(TRAIN)
