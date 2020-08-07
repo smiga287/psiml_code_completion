@@ -20,38 +20,41 @@ def train():
     HIDDEN_DIM = 1500
     NUM_EPOCHS = 1  # 8
     LAYER_NUM = 1
-    BATCH_SIZE = 512
+    BATCH_SIZE = 128
 
     data_manager = DataManager(TRAIN)
 
     tag_to_idx, idx_to_tag = data_manager.get_tag_dicts()
     val_to_idx, idx_to_val = data_manager.get_val_dicts()
 
+    # ad hoc adding of UNKOWN
+    val_to_idx['UNK'] = len(val_to_idx)
+    idx_to_val[len(val_to_idx) - 1] = 'UNK'
     data_train = torch.Tensor(
         [
-            (tag_to_idx[(tag, have_children, have_sibling)], val_to_idx[val])
+            (tag_to_idx[(tag, have_children, have_sibling)], val_to_idx.get(val, val_to_idx['UNK']))
             for tag, val, have_children, have_sibling in (
-                data_manager.get_data()[:5000000]
+                data_manager.get_data()[:50000]
             )
         ]
     )
     data_val = torch.Tensor(
         [
-            (tag_to_idx[(tag, have_children, have_sibling)], val_to_idx[val])
+            (tag_to_idx[(tag, have_children, have_sibling)], val_to_idx.get(val, val_to_idx['UNK']))
             for tag, val, have_children, have_sibling in (
-                data_manager.get_data()[5000000:5500000]
+                data_manager.get_data()[50000:55000]
             )
         ]
     )
 
     training_data = torch.utils.data.DataLoader(
-        Dataset(data_train), BATCH_SIZE, shuffle=True, drop_last=True, num_workers=8
+        Dataset(data_train), BATCH_SIZE, shuffle=True, drop_last=True, num_workers=0
     )
 
     #test_data = None
 
     val_data = torch.utils.data.DataLoader(
-        Dataset(data_val), BATCH_SIZE, shuffle=False, drop_last=True, num_workers=8
+        Dataset(data_val), BATCH_SIZE, shuffle=False, drop_last=True, num_workers=0
     )
 
     model_tag = LSTMTagger(
