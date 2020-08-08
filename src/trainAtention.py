@@ -6,14 +6,14 @@ import torch.nn.functional as F
 import torch.optim as optim
 from LSTMTagger import LSTMTagger
 from LSTMValue import LSTMValue
-from DataManager import DataManager, SMALL, TRAIN
+from DataManager import DataManager
+from util import SMALL, TRAIN
 from Dataset import Dataset
 import time
 from tqdm import tqdm
 from torch.utils.tensorboard import SummaryWriter
 from AtentionModel import AtentionModel
 import warnings
-
 
 
 def train():
@@ -32,15 +32,18 @@ def train():
     val_to_idx, idx_to_val = data_manager.get_val_dicts()
 
     # ad hoc adding of UNKOWN
-    val_to_idx['UNK'] = len(val_to_idx)
-    idx_to_val[len(val_to_idx) - 1] = 'UNK'
+    val_to_idx["UNK"] = len(val_to_idx)
+    idx_to_val[len(val_to_idx) - 1] = "UNK"
 
     train_split_idx = int(len(data_manager.get_data()) * 0.09)
-    validate_split_idx = int(len(data_manager.get_data())*0.1)
+    validate_split_idx = int(len(data_manager.get_data()) * 0.1)
 
     data_train = torch.Tensor(
         [
-            (tag_to_idx[(tag, have_children, have_sibling)], val_to_idx.get(val, val_to_idx['UNK']))
+            (
+                tag_to_idx[(tag, have_children, have_sibling)],
+                val_to_idx.get(val, val_to_idx["UNK"]),
+            )
             for tag, val, have_children, have_sibling in (
                 data_manager.get_data()[:train_split_idx]
             )
@@ -49,7 +52,10 @@ def train():
 
     data_val = torch.Tensor(
         [
-            (tag_to_idx[(tag, have_children, have_sibling)], val_to_idx.get(val, val_to_idx['UNK']))
+            (
+                tag_to_idx[(tag, have_children, have_sibling)],
+                val_to_idx.get(val, val_to_idx["UNK"]),
+            )
             for tag, val, have_children, have_sibling in (
                 data_manager.get_data()[train_split_idx:validate_split_idx]
             )
@@ -66,17 +72,22 @@ def train():
 
     model = nn.DataParallel(
         AtentionModel(
-            len(tag_to_idx), len(val_to_idx),TAG_EMBEDDING_DIM, VAL_EMBEDDING_DIM,HIDDEN_DIM, LAYER_NUM, True
+            len(tag_to_idx),
+            len(val_to_idx),
+            TAG_EMBEDDING_DIM,
+            VAL_EMBEDDING_DIM,
+            HIDDEN_DIM,
+            LAYER_NUM,
+            True
         )
     )
 
     loss_function = nn.NLLLoss()
     optimizer = optim.Adam(model.parameters())
-    
+
     # -----------putting model on GPU--------------
     model.cuda()
     # ---------------------------------------------
-
 
     model_iter = 1
 
@@ -97,19 +108,19 @@ def train():
 
             model.zero_grad()
 
-            unk_idx = val_to_idx['UNK']
-            mask_unk = (y[:,1]!=unk_idx)            #mask for all y val that are not UNK
-            if(mask_unk.sum()==0):
-                    continue
-            sentence = sentence[mask_unk,:,:]
+            unk_idx = val_to_idx["UNK"]
+            mask_unk = y[:, 1] != unk_idx  # mask for all y val that are not UNK
+            if mask_unk.sum() == 0:
+                continue
+            sentence = sentence[mask_unk, :, :]
 
             sentence = sentence.to(device)
             y_pred_val = model(sentence)
             y = y.to(device)
-            
-            correct_val = (y_pred_val.argmax(dim=1) == y[mask_unk,1]).sum().item()
 
-            loss_val = loss_function(y_pred_val, y[mask_unk,1].long())
+            correct_val = (y_pred_val.argmax(dim=1) == y[mask_unk, 1]).sum().item()
+
+            loss_val = loss_function(y_pred_val, y[mask_unk, 1].long())
 
             summary_writer.add_scalar("Val train loss", loss_val, global_step)
             summary_writer.add_scalar(
@@ -123,46 +134,49 @@ def train():
             optimizer.step()
 
             if i % 50 == 0:
-                #torch.save(model, f"D://data//budala_advanced_{model_iter}.pickle")
-                print(f"Test value accuracy: {100 * (correct_val / size)}, value loss: {loss_val}")
+                # torch.save(model, f"D://data//budala_advanced_{model_iter}.pickle")
+                print(
+                    f"Test value accuracy: {100 * (correct_val / size)}, value loss: {loss_val}"
+                )
                 model_iter += 1
 
-        #validation        
+        # validation
         model.eval()
 
-        #for metrics
+        # for metrics
         correct_val = 0
         loss_sum_val = 0
         cnt = 0
         ep_cnt = 0
 
         with torch.no_grad():
-            for i, (sentence,y) in tqdm(
+            for i, (sentence, y) in tqdm(
                 enumerate(val_data_loader),
                 total=len(val_data_loader),
                 desc=f"Epoch: {epoch}",
                 unit="batches",
             ):
                 global_step_val = epoch * len(val_data_loader) + i
-                
 
-                unk_idx = val_to_idx['UNK']
-                mask_unk = (y[:,1]==unk_idx)==False    #all seq that are not UNK
-                if(mask_unk.sum()==0):
+                unk_idx = val_to_idx["UNK"]
+                mask_unk = (y[:, 1] == unk_idx) == False  # all seq that are not UNK
+                if mask_unk.sum() == 0:
                     continue
-                
+
                 sentence = sentence[mask_unk][:][:]
                 sentence = sentence.to(device)
                 y_pred_val = model(sentence)
                 y = y.to(device)
 
-                correct_val += (y_pred_val.argmax(dim=1) == y[mask_unk,1]).sum().item()
+                correct_val += (y_pred_val.argmax(dim=1) == y[mask_unk, 1]).sum().item()
 
                 # loss_tag = loss_function(y_pred_tag, y_tag.long())
-                loss_val = loss_function(y_pred_val, y[mask_unk,1].long())
+                loss_val = loss_function(y_pred_val, y[mask_unk, 1].long())
 
                 # summary_writer.add_scalar("validation_loss_tag", loss_tag, global_step_val)
-                summary_writer.add_scalar("validation_loss_val", loss_val, global_step_val)
+                summary_writer.add_scalar(
+                    "validation_loss_val", loss_val, global_step_val
+                )
                 # # loss_sum_tag += loss_tag
                 loss_sum_val += loss_val
 
@@ -178,7 +192,6 @@ def train():
 
     torch.save(model, "D://data//first_model_attention_long.pickle")
     # torch.save(model_val, "D://data//second_model_val.pickle")
-
 
 
 if __name__ == "__main__":
