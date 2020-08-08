@@ -11,7 +11,9 @@ class LSTMTagger(nn.Module):
         self.tag_embeddings = nn.Embedding(vocab_size_tag, embedding_dim_tag)
         self.val_embeddings = nn.Embedding(vocab_size_val, embedding_dim_val)
         self.embedding_dim = self.embedding_dim_tag+self.embedding_dim_val
+
         #***TODO****
+        
         self.h_0 = torch.nn.Parameter(torch.randn(hidden_dim))
         self.c_0 = torch.nn.Parameter(torch.randn(embedding_dim))
 
