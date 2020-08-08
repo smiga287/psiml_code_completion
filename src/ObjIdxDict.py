@@ -4,6 +4,8 @@ from abc import ABC, abstractmethod
 from collections import Counter
 from util import timing
 
+TRAIN = "python100k" # dirty fix
+
 class ObjIdxDicts(ABC):
     def __init__(self, name, vector, obj_type):
         self.name = name
@@ -11,38 +13,38 @@ class ObjIdxDicts(ABC):
         self.vector = vector
         self.dicts = self.load_or_create_dicts()
 
-    def export_exists(self):
-        obj_to_idx, idx_to_obj = self.get_dict_names()
+    def export_exists(self, name):
+        obj_to_idx, idx_to_obj = self.get_dict_names(name)
         return os.path.exists(f"D://data//{obj_to_idx}.pickle") and os.path.exists(
             f"D://data//{idx_to_obj}.pickle"
         )
 
-    def get_dict_names(self):
+    def get_dict_names(self, name):
         return (
-            f"{self.name}_{self.obj_type}_to_idx",
-            f"{self.name}_idx_to_{self.obj_type}",
+            f"{name}_{self.obj_type}_to_idx",
+            f"{name}_idx_to_{self.obj_type}",
         )
 
     def export(self):
-        names = self.get_dict_names()
+        names = self.get_dict_names(self.name)
         for d, name in zip(self.dicts, names):
             with open(f"D://data//{name}.pickle", "wb") as output_file:
                 pickle.dump(d, output_file)
 
     def load_or_create_dicts(self):
-        if not self.export_exists():
+        if not self.export_exists(TRAIN):
             self.dicts = self.create_dicts(self.vector)
             return self.dicts
 
-        return self.load_dicts()
+        return self.load_dicts(TRAIN)
 
     @abstractmethod
     def create_dicts(self, vector):
         pass
 
     @timing
-    def load_dicts(self):
-        obj_to_idx, idx_to_obj = self.get_dict_names()
+    def load_dicts(self, name):
+        obj_to_idx, idx_to_obj = self.get_dict_names(name)
         with open(f"D://data//{obj_to_idx}.pickle", "rb") as oti_file, open(
             f"D://data//{idx_to_obj}.pickle", "rb"
         ) as ito_file:
