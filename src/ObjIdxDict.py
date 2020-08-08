@@ -4,49 +4,55 @@ from abc import ABC, abstractmethod
 from collections import Counter
 from util import timing
 
+TRAIN = "python100k"  # dirty fix
+
+
 class ObjIdxDicts(ABC):
     def __init__(self, name, vector, obj_type):
         self.name = name
         self.obj_type = obj_type
         self.vector = vector
+        if self.export_exists(TRAIN):
+            self.dicts = self.load_dicts(TRAIN)
+        else:
+            self.dicts = self.create_dicts(self.vector)
         self.dicts = self.load_or_create_dicts()
 
-    def export_exists(self):
-        obj_to_idx, idx_to_obj = self.get_dict_names()
+    def export_exists(self, name):
+        obj_to_idx, idx_to_obj = self.get_dict_names(name)
         return os.path.exists(f"D://data//{obj_to_idx}.pickle") and os.path.exists(
             f"D://data//{idx_to_obj}.pickle"
         )
 
-    def get_dict_names(self):
+    def get_dict_names(self, name):
         return (
-            f"{self.name}_{self.obj_type}_to_idx",
-            f"{self.name}_idx_to_{self.obj_type}",
+            f"{name}_{self.obj_type}_to_idx",
+            f"{name}_idx_to_{self.obj_type}",
         )
 
     def export(self):
-        names = self.get_dict_names()
-        for d, name in zip(self.dicts, names):
-            with open(f"D://data//{name}.pickle", "wb") as output_file:
-                pickle.dump(d, output_file)
+        obj_to_idx, idx_to_obj = self.get_dict_names(self.name)
+        with open(f"D://data//{self.name}_dicts.pickle", "wb") as output_file:
+            save = {f"{obj_to_idx}": obj_to_idx, f"{idx_to_obj}": idx_to_obj}
+            pickle.dump(save, output_file, protocol=4)
 
     def load_or_create_dicts(self):
-        if not self.export_exists():
+        if not self.export_exists(TRAIN):
             self.dicts = self.create_dicts(self.vector)
             return self.dicts
 
-        return self.load_dicts()
+        return self.load_dicts(TRAIN)
 
     @abstractmethod
     def create_dicts(self, vector):
         pass
 
     @timing
-    def load_dicts(self):
-        obj_to_idx, idx_to_obj = self.get_dict_names()
-        with open(f"D://data//{obj_to_idx}.pickle", "rb") as oti_file, open(
-            f"D://data//{idx_to_obj}.pickle", "rb"
-        ) as ito_file:
-            return pickle.load(oti_file), pickle.load(ito_file)
+    def load_dicts(self, name):
+        obj_to_idx, idx_to_obj = self.get_dict_names(name)
+        with open(f"D://data//{self.name}_dicts.pickle", "rb") as f:
+            save = pickle.load(f)
+            return save[obj_to_idx], save[idx_to_obj]
 
 
 class TagIdxDicts(ObjIdxDicts):
@@ -73,7 +79,7 @@ class ValIdxDicts(ObjIdxDicts):
         self.K = 1200
         super().__init__(name, vector, "val")
         # Relevant number of values to have in consideration
-    
+
     @timing
     def create_dicts(self, vector):
         val_to_idx = {}
