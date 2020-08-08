@@ -27,7 +27,13 @@ class DataManager:
     def export(self):
         if not self.vectorizer.export_exists():
             self.vectorizer.export()
-        if not self.tag_dicts.export_exists():
+        if not self.tag_dicts.export_exists(self.name):
             self.tag_dicts.export()
-        if not self.val_dicts.export_exists():
+        if not self.val_dicts.export_exists(self.name):
             self.val_dicts.export()
+
+if __name__ == '__main__':
+    data_manager = DataManager(TRAIN)
+    tti, itt = data_manager.get_tag_dicts()
+    vti, itv = data_manager.get_val_dicts()
+    print()

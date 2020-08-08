@@ -16,13 +16,9 @@ class ObjIdxDicts(ABC):
             self.dicts = self.load_dicts(TRAIN)
         else:
             self.dicts = self.create_dicts(self.vector)
-        self.dicts = self.load_or_create_dicts()
 
     def export_exists(self, name):
-        obj_to_idx, idx_to_obj = self.get_dict_names(name)
-        return os.path.exists(f"D://data//{obj_to_idx}.pickle") and os.path.exists(
-            f"D://data//{idx_to_obj}.pickle"
-        )
+        return os.path.exists(f"D://data//{name}_dicts.pickle")
 
     def get_dict_names(self, name):
         return (
@@ -31,17 +27,12 @@ class ObjIdxDicts(ABC):
         )
 
     def export(self):
-        obj_to_idx, idx_to_obj = self.get_dict_names(self.name)
+
         with open(f"D://data//{self.name}_dicts.pickle", "wb") as output_file:
-            save = {f"{obj_to_idx}": obj_to_idx, f"{idx_to_obj}": idx_to_obj}
+            obj_to_idx_name, idx_to_obj_name = self.get_dict_names(self.name)
+            obj_to_idx, idx_to_obj = self.dicts
+            save = {f"{obj_to_idx_name}": obj_to_idx, f"{idx_to_obj_name}": idx_to_obj}
             pickle.dump(save, output_file, protocol=4)
-
-    def load_or_create_dicts(self):
-        if not self.export_exists(TRAIN):
-            self.dicts = self.create_dicts(self.vector)
-            return self.dicts
-
-        return self.load_dicts(TRAIN)
 
     @abstractmethod
     def create_dicts(self, vector):

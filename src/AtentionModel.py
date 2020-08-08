@@ -2,15 +2,13 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-class LSTMTagger(nn.Module):
+class AtentionModel(nn.Module):
 
-    def __init__(self,tag_model, vocab_size_tag, vocab_size_val, embedding_dim_tag, embedding_dim_val, hidden_dim , layer_cnt):
-        super(LSTMTagger, self).__init__()
+    def __init__(self, vocab_size_tag, vocab_size_val, embedding_dim_tag, embedding_dim_val, hidden_dim , layer_cnt):
+        super(AtentionModel, self).__init__()
         self.hidden_dim = hidden_dim
 
-        self.tag_embeddings = tag_model.word_embeddings
-        for param in self.tag_embeddings.parameters():
-            param.requires_grad = False
+        self.tag_embeddings = nn.Embedding(vocab_size_tag, embedding_dim_tag)
         
         self.val_embeddings = nn.Embedding(vocab_size_val, embedding_dim_val)
         
@@ -46,8 +44,6 @@ class LSTMTagger(nn.Module):
         Gt = self.wg(torch.cat((last_h, ct),1))
         Gt = F.tanh(Gt)
 
-        tag = self.final_tag(Gt)
         val = self.final_val(Gt)
-        tag = F.log_softmax(tag, dim=1)
         val = F.log_softmax(val, dim=1)
-        return tag_scores
+        return val

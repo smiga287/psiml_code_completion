@@ -11,7 +11,7 @@ from Dataset import Dataset
 import time
 from tqdm import tqdm
 from torch.utils.tensorboard import SummaryWriter
-
+from AtentionModel import AtentionModel
 
 def train():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -34,7 +34,7 @@ def train():
     idx_to_val[len(val_to_idx) - 1] = 'UNK'
 
     train_split_idx = int(len(data_manager.get_data()) * 0.9)
-    validate_split_idx = int(len(data_manager.get_data())*0.92)
+    validate_split_idx = int(len(data_manager.get_data()))
     data_train = torch.Tensor(
         [
             (tag_to_idx[(tag, have_children, have_sibling)], val_to_idx.get(val, val_to_idx['UNK']))
@@ -62,18 +62,16 @@ def train():
         Dataset(data_val), BATCH_SIZE, shuffle=False, drop_last=True, num_workers=0
     )
 
-    model_tag = LSTMTagger(
-        TAG_EMBEDDING_DIM, HIDDEN_DIM, len(tag_to_idx), len(tag_to_idx), LAYER_NUM
+    model = AtentionModel(
+        len(tag_to_idx), len(val_to_idx),TAG_EMBEDDING_DIM, VAL_EMBEDDING_DIM,HIDDEN_DIM, LAYER_NUM
     )
-    # model_val = LSTMValue(
-    #     VAL_EMBEDDING_DIM, HIDDEN_DIM, len(val_to_idx), len(val_to_idx), LAYER_NUM
-    # )
+    
     loss_function = nn.NLLLoss()
-    optimizer_tag = optim.SGD(model_tag.parameters(), 0.001)
-    # optimizer_val = optim.Adam(model_val.parameters())
+    optimizer = optim.Adam(model.parameters())
+    
 
     # -----------putting everything on GPU---------
-    model_tag.cuda()
+    model.cuda()
     # model_val.cuda()
     # ---------------------------------------------
 
@@ -84,8 +82,8 @@ def train():
 
         summary_writer = SummaryWriter()
 
-        model_tag.train()
-        # model_val.train()
+        model.train()
+        
         start_time = time.time()
         cnt = 0
         for i, (sentence, y) in tqdm(
@@ -97,44 +95,38 @@ def train():
             global_step = epoch * len(training_data) + i
             size = int(sentence.size(0))
 
-            model_tag.zero_grad()
-            # model_val.zero_grad()
+            model.zero_grad()
 
-            sentence_tag = sentence[:, :, 0].to(device)
-            y_tag = y[:, 0].to(device)
+            sentence.to(device)
 
-            # sentence_val = sentence[:, :, 1].to(device)
-            # y_val = y[:, 1].to(device)
+            y_pred_val = model(sentence)
 
-            y_pred_tag = model_tag(sentence_tag)
-            # y_pred_val = model_val(sentence_val)
+            #correct_tag = (y_pred_tag.argmax(dim=1) == y_tag).sum().item()
+            correct_val = (y_pred_val.argmax(dim=1) == y[:,1]).sum().item()
 
-            correct_tag = (y_pred_tag.argmax(dim=1) == y_tag).sum().item()
-            # correct_val = (y_pred_val.argmax(dim=1) == y_val).sum().item()
+            #loss_tag = loss_function(y_pred_tag, y_tag.long())
+            loss_val = loss_function(y_pred_val, y[:,1].long())
 
-            loss_tag = loss_function(y_pred_tag, y_tag.long())
-            # loss_val = loss_function(y_pred_val, y_val.long())
-
-            summary_writer.add_scalar("Tag train loss", loss_tag, global_step)
-            summary_writer.add_scalar(
-                "Tag accuracy", 100 * (correct_tag / size), global_step
-            )
-            # summary_writer.add_scalar("Val train loss", loss_val, global_step)
+            # summary_writer.add_scalar("Tag train loss", loss_tag, global_step)
             # summary_writer.add_scalar(
-                # "Val accuracy", 100 * (correct_val / size), global_step
+            #     "Tag accuracy", 100 * (correct_tag / size), global_step
             # )
+            summary_writer.add_scalar("Val train loss", loss_val, global_step)
+            summary_writer.add_scalar(
+                # "Val accuracy", 100 * (correct_val / size), global_step
+            )
 
-            loss_tag.backward()
-            # loss_val.backward()
+            # loss_tag.backward()
+            loss_val.backward()
 
-            nn.utils.clip_grad_value_(model_tag.parameters(), 5.0)
+            nn.utils.clip_grad_value_(model.parameters(), 5.0)
             # nn.utils.clip_grad_value_(model_val.parameters(), 5.0)
 
-            optimizer_tag.step()
+            optimizer.step()
             # optimizer_val.step()
 
             if i % 5000 == 0:
-                torch.save(model_tag, f"D://data//budala_{model_iter}.pickle")
+                torch.save(model_tag, f"D://data//budala_advanced_{model_iter}.pickle")
                 model_iter += 1
                 
         model_tag.eval()
@@ -278,9 +270,9 @@ def validate():
                 # loss_val = loss_function(y_pred_val, y_val.long())
 
                 summary_writer.add_scalar("validation_loss_tag", loss_tag, global_step_val)
-                # summary_writer.add_scalar("validation_loss_val", loss_val, global_step_val)
+                
                 loss_sum_tag += loss_tag
-                # loss_sum_val += loss_val
+                
 
                 ep_cnt += 1
                 cnt += y_tag.size(0)
