@@ -10,6 +10,10 @@ class ObjIdxDicts(ABC):
         self.name = name
         self.obj_type = obj_type
         self.vector = vector
+        if self.export_exists():
+            self.dicts = self.load_dicts()
+        else:
+            self.dicts = self.create_dicts(self.vector)
         self.dicts = self.load_or_create_dicts()
 
     def export_exists(self):
@@ -25,10 +29,10 @@ class ObjIdxDicts(ABC):
         )
 
     def export(self):
-        names = self.get_dict_names()
-        for d, name in zip(self.dicts, names):
-            with open(f"D://data//{name}.pickle", "wb") as output_file:
-                pickle.dump(d, output_file, protocol=4)
+        obj_to_idx, idx_to_obj = self.get_dict_names()
+        with open(f"D://data//{self.name}_dicts.pickle", "wb") as output_file:
+            save = {f"{obj_to_idx}": obj_to_idx, f"{idx_to_obj}": idx_to_obj}
+            pickle.dump(save, output_file, protocol=4)
 
     def load_or_create_dicts(self):
         if not self.export_exists():
@@ -44,10 +48,9 @@ class ObjIdxDicts(ABC):
     @timing
     def load_dicts(self):
         obj_to_idx, idx_to_obj = self.get_dict_names()
-        with open(f"D://data//{obj_to_idx}.pickle", "rb") as oti_file, open(
-            f"D://data//{idx_to_obj}.pickle", "rb"
-        ) as ito_file:
-            return pickle.load(oti_file), pickle.load(ito_file)
+        with open(f"D://data//{self.name}_dicts.pickle", "rb") as f:
+            save = pickle.load(f)
+            return save[obj_to_idx], save[idx_to_obj]
 
 
 class TagIdxDicts(ObjIdxDicts):
