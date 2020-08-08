@@ -11,6 +11,7 @@ from Dataset import Dataset
 import time
 from tqdm import tqdm
 from torch.utils.tensorboard import SummaryWriter
+from util import DATA_ROOT
 
 
 def train():
@@ -28,14 +29,17 @@ def train():
     val_to_idx, idx_to_val = data_manager.get_val_dicts()
 
     # ad hoc adding of UNKOWN
-    val_to_idx['UNK'] = len(val_to_idx)
-    idx_to_val[len(val_to_idx) - 1] = 'UNK'
+    val_to_idx["UNK"] = len(val_to_idx)
+    idx_to_val[len(val_to_idx) - 1] = "UNK"
 
     train_split_idx = int(len(data_manager.get_data()) * 0.5)
     validate_split_idx = int(len(data_manager.get_data()) * 0.6)
     data_train = torch.Tensor(
         [
-            (tag_to_idx[(tag, have_children, have_sibling)], val_to_idx.get(val, val_to_idx['UNK']))
+            (
+                tag_to_idx[(tag, have_children, have_sibling)],
+                val_to_idx.get(val, val_to_idx["UNK"]),
+            )
             for tag, val, have_children, have_sibling in (
                 data_manager.get_data()[:train_split_idx]
             )
@@ -43,7 +47,10 @@ def train():
     )
     data_val = torch.Tensor(
         [
-            (tag_to_idx[(tag, have_children, have_sibling)], val_to_idx.get(val, val_to_idx['UNK']))
+            (
+                tag_to_idx[(tag, have_children, have_sibling)],
+                val_to_idx.get(val, val_to_idx["UNK"]),
+            )
             for tag, val, have_children, have_sibling in (
                 data_manager.get_data()[train_split_idx:validate_split_idx]
             )
@@ -54,7 +61,7 @@ def train():
         Dataset(data_train), BATCH_SIZE, shuffle=True, drop_last=True, num_workers=0
     )
 
-    #test_data = None
+    # test_data = None
 
     val_data = torch.utils.data.DataLoader(
         Dataset(data_val), BATCH_SIZE, shuffle=False, drop_last=True, num_workers=0
@@ -74,7 +81,6 @@ def train():
     model_tag.cuda()
     # model_val.cuda()
     # ---------------------------------------------
-
 
     model_iter = 1
 
@@ -110,6 +116,7 @@ def train():
             correct_tag = (y_pred_tag.argmax(dim=1) == y_tag).sum().item()
             # correct_val = (y_pred_val.argmax(dim=1) == y_val).sum().item()
 
+            # long treba jer y_tag treba da predstavlja rešenje
             loss_tag = loss_function(y_pred_tag, y_tag.long())
             # loss_val = loss_function(y_pred_val, y_val.long())
 
@@ -119,7 +126,7 @@ def train():
             )
             # summary_writer.add_scalar("Val train loss", loss_val, global_step)
             # summary_writer.add_scalar(
-                # "Val accuracy", 100 * (correct_val / size), global_step
+            # "Val accuracy", 100 * (correct_val / size), global_step
             # )
 
             loss_tag.backward()
@@ -132,9 +139,9 @@ def train():
             # optimizer_val.step()
 
             if i % 5000 == 0:
-                torch.save(model_tag, f"D://data//budala_{model_iter}.pickle")
+                torch.save(model_tag, f"{DATA_ROOT}budala_{model_iter}.pickle")
                 model_iter += 1
-                
+
         model_tag.eval()
         # model_val.eval()
 
@@ -148,14 +155,14 @@ def train():
 
         ep_cnt = 0
         with torch.no_grad():
-            for i, (sentence,y) in tqdm(
+            for i, (sentence, y) in tqdm(
                 enumerate(val_data),
                 total=len(val_data),
                 desc=f"Epoch: {epoch}",
                 unit="batches",
             ):
                 global_step_val = epoch * len(val_data) + i
-                
+
                 sentence_tag = sentence[:, :, 0].to(device)
                 y_tag = y[:, 0].to(device)
                 y_pred_tag = model_tag(sentence_tag)
@@ -170,7 +177,9 @@ def train():
                 loss_tag = loss_function(y_pred_tag, y_tag.long())
                 # loss_val = loss_function(y_pred_val, y_val.long())
 
-                summary_writer.add_scalar("validation_loss_tag", loss_tag, global_step_val)
+                summary_writer.add_scalar(
+                    "validation_loss_tag", loss_tag, global_step_val
+                )
                 # summary_writer.add_scalar("validation_loss_val", loss_val, global_step_val)
                 loss_sum_tag += loss_tag
                 # loss_sum_val += loss_val
@@ -205,27 +214,34 @@ def validate():
     val_to_idx, idx_to_val = data_manager.get_val_dicts()
 
     # ad hoc adding of UNKOWN
-    val_to_idx['UNK'] = len(val_to_idx)
-    idx_to_val[len(val_to_idx) - 1] = 'UNK'
+    val_to_idx["UNK"] = len(val_to_idx)
+    idx_to_val[len(val_to_idx) - 1] = "UNK"
 
     train_split_idx = int(len(data_manager.get_data()) * 0.5)
     validate_split_idx = int(len(data_manager.get_data()) * 0.52)
 
     data_val = torch.Tensor(
         [
-            (tag_to_idx[(tag, have_children, have_sibling)], val_to_idx.get(val, val_to_idx['UNK']))
+            (
+                tag_to_idx[(tag, have_children, have_sibling)],
+                val_to_idx.get(val, val_to_idx["UNK"]),
+            )
             for tag, val, have_children, have_sibling in (
                 data_manager.get_data()[train_split_idx:validate_split_idx]
             )
         ]
     )
 
-
     val_data = torch.utils.data.DataLoader(
-        Dataset(data_val), BATCH_SIZE, shuffle=False, drop_last=True, num_workers=0, pin_memory=True
+        Dataset(data_val),
+        BATCH_SIZE,
+        shuffle=False,
+        drop_last=True,
+        num_workers=0,
+        pin_memory=True,
     )
 
-    model_tag = torch.load('D://data//budala_16.pickle')
+    model_tag = torch.load("D://data//budala_16.pickle")
 
     # model_val = LSTMValue(
     #     VAL_EMBEDDING_DIM, HIDDEN_DIM, len(val_to_idx), len(val_to_idx), LAYER_NUM
@@ -253,7 +269,7 @@ def validate():
 
         ep_cnt = 0
         with torch.no_grad():
-            for i, (sentence,y) in tqdm(
+            for i, (sentence, y) in tqdm(
                 enumerate(val_data),
                 total=len(val_data),
                 desc=f"Epoch: {epoch}",
@@ -275,7 +291,9 @@ def validate():
                 loss_tag = loss_function(y_pred_tag, y_tag.long())
                 # loss_val = loss_function(y_pred_val, y_val.long())
 
-                summary_writer.add_scalar("validation_loss_tag", loss_tag, global_step_val)
+                summary_writer.add_scalar(
+                    "validation_loss_tag", loss_tag, global_step_val
+                )
                 # summary_writer.add_scalar("validation_loss_val", loss_val, global_step_val)
                 loss_sum_tag += loss_tag
                 # loss_sum_val += loss_val
@@ -290,6 +308,7 @@ def validate():
             #     f"Validation val: loss {loss_sum_val/ep_cnt}, accuracy:{100*correct_val/cnt}"
             # )
         print(f"Epoch ended, time taken {time.time()-start_time}s")
+
 
 if __name__ == "__main__":
     train()
