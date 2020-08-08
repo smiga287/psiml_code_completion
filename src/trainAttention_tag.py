@@ -21,11 +21,11 @@ def train():
     TAG_EMBEDDING_DIM = 64
     VAL_EMBEDDING_DIM = 128
     HIDDEN_DIM = 1500
-    NUM_EPOCHS = 2  # 8
+    NUM_EPOCHS = 8
     LAYER_NUM = 1
     BATCH_SIZE = 256
 
-    data_manager = DataManager(TEST)
+    data_manager = DataManager(SMALL)
     warnings.filterwarnings("ignore")
 
     tag_to_idx, idx_to_tag = data_manager.get_tag_dicts()
@@ -35,8 +35,8 @@ def train():
     val_to_idx["UNK"] = len(val_to_idx)
     idx_to_val[len(val_to_idx) - 1] = "UNK"
 
-    train_split_idx = int(len(data_manager.get_data()) * 0.09)
-    validate_split_idx = int(len(data_manager.get_data()) * 0.1)
+    train_split_idx = int(len(data_manager.get_data()) * 0.05)
+    validate_split_idx = int(len(data_manager.get_data()) * 0.06)
 
     data_train = torch.Tensor(
         [
@@ -78,7 +78,7 @@ def train():
             VAL_EMBEDDING_DIM,
             HIDDEN_DIM,
             LAYER_NUM,
-            True
+            False
         )
     )
 
@@ -108,23 +108,23 @@ def train():
 
             model.zero_grad()
 
-            unk_idx = val_to_idx["UNK"]
-            mask_unk = y[:, 1] != unk_idx  # mask for all y val that are not UNK
-            if mask_unk.sum() == 0:
-                continue
-            sentence = sentence[mask_unk, :, :]
+            # unk_idx = val_to_idx["UNK"]
+            # mask_unk = y[:, 1] != unk_idx  # mask for all y val that are not UNK
+            # if mask_unk.sum() == 0:
+            #    continue
+            # sentence = sentence[mask_unk, :, :]
 
             sentence = sentence.to(device)
             y_pred_val = model(sentence)
             y = y.to(device)
 
-            correct_val = (y_pred_val.argmax(dim=1) == y[mask_unk, 1]).sum().item()
+            correct_val = (y_pred_val.argmax(dim=1) == y[:, 0]).sum().item()
 
-            loss_val = loss_function(y_pred_val, y[mask_unk, 1].long())
+            loss_val = loss_function(y_pred_val, y[:, 0].long())
 
-            summary_writer.add_scalar("Val train loss", loss_val, global_step)
+            summary_writer.add_scalar("Tag train loss", loss_val, global_step)
             summary_writer.add_scalar(
-                "Val accuracy", 100 * (correct_val / size), global_step
+                "tag accuracy", 100 * (correct_val / size), global_step
             )
 
             loss_val.backward()
@@ -136,7 +136,7 @@ def train():
             if i % 50 == 0:
                 # torch.save(model, f"D://data//budala_advanced_{model_iter}.pickle")
                 print(
-                    f"Test value accuracy: {100 * (correct_val / size)}, value loss: {loss_val}"
+                    f"Test tag accuracy: {100 * (correct_val / size)}, tag loss: {loss_val}"
                 )
                 model_iter += 1
 
@@ -158,24 +158,24 @@ def train():
             ):
                 global_step_val = epoch * len(val_data_loader) + i
 
-                unk_idx = val_to_idx["UNK"]
-                mask_unk = (y[:, 1] == unk_idx) == False  # all seq that are not UNK
-                if mask_unk.sum() == 0:
-                    continue
+                # unk_idx = val_to_idx["UNK"]
+                # mask_unk = (y[:, 1] == unk_idx) == False  # all seq that are not UNK
+                # if mask_unk.sum() == 0:
+                #     continue
 
-                sentence = sentence[mask_unk][:][:]
+                # sentence = sentence[mask_unk][:][:]
                 sentence = sentence.to(device)
                 y_pred_val = model(sentence)
                 y = y.to(device)
 
-                correct_val += (y_pred_val.argmax(dim=1) == y[mask_unk, 1]).sum().item()
+                correct_val += (y_pred_val.argmax(dim=1) == y[:, 0]).sum().item()
 
                 # loss_tag = loss_function(y_pred_tag, y_tag.long())
-                loss_val = loss_function(y_pred_val, y[mask_unk, 1].long())
+                loss_val = loss_function(y_pred_val, y[:, 0].long())
 
                 # summary_writer.add_scalar("validation_loss_tag", loss_tag, global_step_val)
                 summary_writer.add_scalar(
-                    "validation_loss_val", loss_val, global_step_val
+                    "validation_loss_tag", loss_val, global_step_val
                 )
                 # # loss_sum_tag += loss_tag
                 loss_sum_val += loss_val
@@ -187,10 +187,10 @@ def train():
             #     f"Validation tag: loss {loss_sum_tag/ep_cnt}, accuracy:{100*correct_tag/cnt}"
             # )
             print(
-                f"Validation val: loss {loss_sum_val/ep_cnt}, accuracy:{100*correct_val/cnt}"
+                f"Validation tag: loss {loss_sum_val/ep_cnt}, accuracy:{100*correct_val/cnt}"
             )
 
-    torch.save(model, "D://data//first_model_attention_long.pickle")
+    torch.save(model, f"D://data//model_attention_{epoch}.pickle")
     # torch.save(model_val, "D://data//second_model_val.pickle")
 
 
