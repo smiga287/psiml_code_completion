@@ -3,6 +3,7 @@ import json
 import pickle
 from util import timing
 
+
 class JSONToVector:
     def __init__(self, name: str):
         self.codes = []
@@ -69,7 +70,7 @@ class JSONToVector:
 
     def export(self):
         with open(self.dest_path, "wb") as dest_file:
-            pickle.dump(self.res, dest_file)
+            pickle.dump(self.res, dest_file, protocol=4)
 
     def export_exists(self):
         return os.path.exists(self.dest_path)

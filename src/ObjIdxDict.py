@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from collections import Counter
 from util import timing
 
+
 class ObjIdxDicts(ABC):
     def __init__(self, name, vector, obj_type):
         self.name = name
@@ -27,7 +28,7 @@ class ObjIdxDicts(ABC):
         names = self.get_dict_names()
         for d, name in zip(self.dicts, names):
             with open(f"D://data//{name}.pickle", "wb") as output_file:
-                pickle.dump(d, output_file)
+                pickle.dump(d, output_file, protocol=4)
 
     def load_or_create_dicts(self):
         if not self.export_exists():
@@ -73,7 +74,7 @@ class ValIdxDicts(ObjIdxDicts):
         self.K = 1200
         super().__init__(name, vector, "val")
         # Relevant number of values to have in consideration
-    
+
     @timing
     def create_dicts(self, vector):
         val_to_idx = {}
