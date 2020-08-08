@@ -1,7 +1,7 @@
 import os
 import json
 import pickle
-from util import timing
+from util import timing, DATA_ROOT
 
 
 class JSONToVector:
@@ -9,8 +9,8 @@ class JSONToVector:
         self.codes = []
         self.seen = set()
         self.res = []
-        self.src_path = f"D://data//{name}.json"
-        self.dest_path = f"D://data//{name}_vector.pickle"
+        self.src_path = f"{DATA_ROOT}{name}.json"
+        self.dest_path = f"{DATA_ROOT}{name}_vector.pickle"
         if self.export_exists():
             self.load_data()
         else:

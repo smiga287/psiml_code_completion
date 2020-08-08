@@ -2,11 +2,6 @@ from JSONToVector import JSONToVector
 from ObjIdxDict import TagIdxDicts, ValIdxDicts
 
 
-TRAIN = "python100k"
-TEST = "python50k"
-SMALL = "python1k"
-
-
 class DataManager:
     def __init__(self, name):
         self.name = name

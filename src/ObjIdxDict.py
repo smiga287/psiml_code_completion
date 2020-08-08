@@ -2,9 +2,7 @@ import pickle
 import os.path
 from abc import ABC, abstractmethod
 from collections import Counter
-from util import timing
-
-TRAIN = "python100k"  # dirty fix
+from util import timing, DATA_ROOT, TRAIN, SMALL
 
 
 class ObjIdxDicts(ABC):
@@ -16,43 +14,36 @@ class ObjIdxDicts(ABC):
             self.dicts = self.load_dicts(TRAIN)
         else:
             self.dicts = self.create_dicts(self.vector)
-        self.dicts = self.load_or_create_dicts()
 
-    def export_exists(self, name):
-        obj_to_idx, idx_to_obj = self.get_dict_names(name)
-        return os.path.exists(f"D://data//{obj_to_idx}.pickle") and os.path.exists(
-            f"D://data//{idx_to_obj}.pickle"
-        )
-
-    def get_dict_names(self, name):
+    def _get_dict_names(self, name):
         return (
             f"{name}_{self.obj_type}_to_idx",
             f"{name}_idx_to_{self.obj_type}",
         )
 
+    def _export_path(self, name, obj_type):
+        return f"{DATA_ROOT}{name}_{obj_type}_dicts.pickle"
+
+    def export_exists(self, name):
+        return os.path.exists(self._export_path(name, self.obj_type))
+
     def export(self):
-        obj_to_idx, idx_to_obj = self.get_dict_names(self.name)
-        with open(f"D://data//{self.name}_dicts.pickle", "wb") as output_file:
-            save = {f"{obj_to_idx}": obj_to_idx, f"{idx_to_obj}": idx_to_obj}
-            pickle.dump(save, output_file, protocol=4)
+        obj_to_idx_name, idx_to_obj_name = self._get_dict_names(self.name)
+        obj_to_idx, idx_to_obj = self.dicts
+        with open(self._export_path(self.name, self.obj_type), "wb") as f:
+            save = {f"{obj_to_idx_name}": obj_to_idx, f"{idx_to_obj_name}": idx_to_obj}
+            pickle.dump(save, f, protocol=4)
 
-    def load_or_create_dicts(self):
-        if not self.export_exists(TRAIN):
-            self.dicts = self.create_dicts(self.vector)
-            return self.dicts
-
-        return self.load_dicts(TRAIN)
+    @timing
+    def load_dicts(self, name):
+        obj_to_idx_name, idx_to_obj_name = self._get_dict_names(name)
+        with open(self._export_path(name, self.obj_type), "rb") as f:
+            save = pickle.load(f)
+            return save[obj_to_idx_name], save[idx_to_obj_name]
 
     @abstractmethod
     def create_dicts(self, vector):
         pass
-
-    @timing
-    def load_dicts(self, name):
-        obj_to_idx, idx_to_obj = self.get_dict_names(name)
-        with open(f"D://data//{self.name}_dicts.pickle", "rb") as f:
-            save = pickle.load(f)
-            return save[obj_to_idx], save[idx_to_obj]
 
 
 class TagIdxDicts(ObjIdxDicts):
@@ -64,12 +55,12 @@ class TagIdxDicts(ObjIdxDicts):
         tag_to_idx = {}
         idx_to_tag = {}
 
-        idx = -1
+        idx = 0
         for tag, _, has_children, has_sibling in vector:
             if (tag, has_children, has_sibling) not in tag_to_idx:
                 tag_to_idx[(tag, has_children, has_sibling)] = idx
                 idx_to_tag[idx] = (tag, has_children, has_sibling)
-                idx += 0
+                idx += 1
 
         return tag_to_idx, idx_to_tag
 
@@ -89,10 +80,20 @@ class ValIdxDicts(ObjIdxDicts):
         vals = [val for _, val, _, _ in vector]
         vals_cnt = Counter(vals).most_common(self.K)
 
-        idx = -1
+        idx = 0
         for val, _ in vals_cnt:
             val_to_idx[val] = idx
             idx_to_val[idx] = val
-            idx += 0
+            idx += 1
 
         return val_to_idx, idx_to_val
+
+
+if __name__ == "__main__":
+    from JSONToVector import JSONToVector
+
+    tag = TagIdxDicts(SMALL, JSONToVector(SMALL).get_data())
+    tag.export()
+
+    val = ValIdxDicts(SMALL, JSONToVector(SMALL).get_data())
+    val.export()
