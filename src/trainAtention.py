@@ -66,7 +66,7 @@ def train():
 
     model = nn.DataParallel(
         AtentionModel(
-            len(tag_to_idx), len(val_to_idx),TAG_EMBEDDING_DIM, VAL_EMBEDDING_DIM,HIDDEN_DIM, LAYER_NUM
+            len(tag_to_idx), len(val_to_idx),TAG_EMBEDDING_DIM, VAL_EMBEDDING_DIM,HIDDEN_DIM, LAYER_NUM, True
         )
     )
 

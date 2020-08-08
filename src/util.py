@@ -1,7 +1,7 @@
 from functools import wraps
 from time import time
 
-DATA_ROOT = "./data/"
+DATA_ROOT = "D://data//"
 
 TRAIN = "python100k"
 TEST = "python50k"

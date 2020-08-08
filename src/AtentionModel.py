@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 class AtentionModel(nn.Module):
 
-    def __init__(self, vocab_size_tag, vocab_size_val, embedding_dim_tag, embedding_dim_val, hidden_dim=1500 , layer_cnt=1):
+    def __init__(self, vocab_size_tag, vocab_size_val, embedding_dim_tag, embedding_dim_val, hidden_dim=1500 , layer_cnt=1, for_val):
         super(AtentionModel, self).__init__()
         self.hidden_dim = hidden_dim
 
@@ -26,7 +26,10 @@ class AtentionModel(nn.Module):
         self.v = nn.Linear(hidden_dim, 1, bias=False)
 
         self.wg = nn.Linear(2*hidden_dim, hidden_dim, bias=False)
-        self.final = nn.Linear(hidden_dim, vocab_size_val)
+        if for_val:
+            self.final = nn.Linear(hidden_dim, vocab_size_val)
+        else:
+            self.final = nn.Linear(hidden_dim, vocab_size_tag)
 
 
     def forward(self, sentence):
