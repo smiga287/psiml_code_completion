@@ -6,12 +6,12 @@ import torch.nn.functional as F
 import torch.optim as optim
 from LSTMTagger import LSTMTagger
 from LSTMValue import LSTMValue
-from DataManager import DataManager, SMALL, TRAIN
+from DataManager import DataManager
 from Dataset import Dataset
 import time
 from tqdm import tqdm
 from torch.utils.tensorboard import SummaryWriter
-from util import DATA_ROOT
+from util import DATA_ROOT, SMALL, TRAIN
 
 
 def train():
@@ -35,7 +35,7 @@ def train():
     idx_to_val[len(val_to_idx) - 1] = "UNK"
 
     train_split_idx = int(len(data_manager.get_data()) * 0.9)
-    validate_split_idx = int(len(data_manager.get_data())*0.92)
+    validate_split_idx = int(len(data_manager.get_data()) * 0.92)
     data_train = torch.Tensor(
         [
             (
