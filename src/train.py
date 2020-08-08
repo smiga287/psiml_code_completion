@@ -25,6 +25,8 @@ def train():
 
     data_manager = DataManager(TRAIN)
 
+    d = data_manager.get_data()
+
     tag_to_idx, idx_to_tag = data_manager.get_tag_dicts()
     val_to_idx, idx_to_val = data_manager.get_val_dicts()
 
@@ -32,8 +34,8 @@ def train():
     val_to_idx["UNK"] = len(val_to_idx)
     idx_to_val[len(val_to_idx) - 1] = "UNK"
 
-    train_split_idx = int(len(data_manager.get_data()) * 0.5)
-    validate_split_idx = int(len(data_manager.get_data()) * 0.6)
+    train_split_idx = int(len(data_manager.get_data()) * 0.9)
+    validate_split_idx = int(len(data_manager.get_data())*0.92)
     data_train = torch.Tensor(
         [
             (
@@ -74,7 +76,7 @@ def train():
     #     VAL_EMBEDDING_DIM, HIDDEN_DIM, len(val_to_idx), len(val_to_idx), LAYER_NUM
     # )
     loss_function = nn.NLLLoss()
-    optimizer_tag = optim.Adam(model_tag.parameters())
+    optimizer_tag = optim.SGD(model_tag.parameters(), 0.001)
     # optimizer_val = optim.Adam(model_val.parameters())
 
     # -----------putting everything on GPU---------
@@ -217,8 +219,8 @@ def validate():
     val_to_idx["UNK"] = len(val_to_idx)
     idx_to_val[len(val_to_idx) - 1] = "UNK"
 
-    train_split_idx = int(len(data_manager.get_data()) * 0.5)
-    validate_split_idx = int(len(data_manager.get_data()) * 0.52)
+    train_split_idx = int(len(data_manager.get_data()) * 0.05)
+    validate_split_idx = int(len(data_manager.get_data()) * 0.07)
 
     data_val = torch.Tensor(
         [
