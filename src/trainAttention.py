@@ -12,7 +12,7 @@ from Dataset import Dataset
 import time
 from tqdm import tqdm
 from torch.utils.tensorboard import SummaryWriter
-from AtentionModel import AtentionModel
+from AttentionModel import AttentionModel
 import warnings
 
 
@@ -71,14 +71,14 @@ def train():
     )
 
     model = nn.DataParallel(
-        AtentionModel(
+        AttentionModel(
             len(tag_to_idx),
             len(val_to_idx),
             TAG_EMBEDDING_DIM,
             VAL_EMBEDDING_DIM,
             HIDDEN_DIM,
             LAYER_NUM,
-            True
+            True,
         )
     )
 

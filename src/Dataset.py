@@ -7,7 +7,7 @@ class Dataset(TorchDataset):
         self.window = window
 
     def __getitem__(self, idx):
-        return (self.data[idx : idx + self.window-1], self.data[idx+self.window])
+        return (self.data[idx : idx + self.window - 1], self.data[idx + self.window])
 
     def __len__(self):
         return len(self.data) - self.window

@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class PointerMixtureModel(nn.Module):
+class AttentionModel(nn.Module):
     def __init__(
         self,
         vocab_size_tag,
@@ -14,7 +14,7 @@ class PointerMixtureModel(nn.Module):
         layer_cnt,
         for_val,
     ):
-        super(PointerMixtureModel, self).__init__()
+        super(AttentionModel, self).__init__()
         self.hidden_dim = hidden_dim
 
         self.tag_embeddings = nn.Embedding(vocab_size_tag, embedding_dim_tag)
@@ -37,7 +37,7 @@ class PointerMixtureModel(nn.Module):
         self.v = nn.Linear(hidden_dim, 1, bias=False)
 
         self.wg = nn.Linear(2 * hidden_dim, hidden_dim, bias=False)
-        self.ws = nn.Linear(2 * hidden_dim, 1, bias=True)
+
         if for_val:
             self.final = nn.Linear(hidden_dim, vocab_size_val)
         else:
@@ -64,10 +64,4 @@ class PointerMixtureModel(nn.Module):
 
         val = self.final(Gt)
         val = F.log_softmax(val, dim=1)
-
-        st = torch.sigmoid(self.ws(torch.cat((last_h, ct), 1)))
-
-        if st - 0.5 > 0:
-            return val, True
-        else:
-            return alfa, False
+        return val
