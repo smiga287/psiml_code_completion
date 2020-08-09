@@ -86,6 +86,9 @@ class ValIdxDicts(ObjIdxDicts):
             idx_to_val[idx] = val
             idx += 1
 
+        val_to_idx["UNK"] = len(val_to_idx)
+        idx_to_val[len(val_to_idx) - 1] = "UNK"
+
         return val_to_idx, idx_to_val
 
 

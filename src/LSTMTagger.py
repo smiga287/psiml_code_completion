@@ -19,7 +19,6 @@ class LSTMTagger(nn.Module):
         self.hidden2tag = nn.Linear(hidden_dim, tagset_size)
 
     def forward(self, sentence):
-        
         embeds = self.word_embeddings(sentence.long())
         lstm_out, _ = self.lstm(embeds)
         tag_space = self.hidden2tag(lstm_out[:, -1, :])

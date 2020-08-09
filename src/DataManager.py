@@ -1,5 +1,6 @@
 from JSONToVector import JSONToVector
 from ObjIdxDict import TagIdxDicts, ValIdxDicts
+from util import TRAIN
 
 
 class DataManager:
@@ -27,7 +28,8 @@ class DataManager:
         if not self.val_dicts.export_exists(self.name):
             self.val_dicts.export()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     data_manager = DataManager(TRAIN)
     tti, itt = data_manager.get_tag_dicts()
     vti, itv = data_manager.get_val_dicts()
