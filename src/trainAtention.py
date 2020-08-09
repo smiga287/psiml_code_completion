@@ -25,7 +25,7 @@ def train():
     LAYER_NUM = 1
     BATCH_SIZE = 256
 
-    data_manager = DataManager(TEST)
+    data_manager = DataManager(TRAIN)
     warnings.filterwarnings("ignore")
 
     tag_to_idx, idx_to_tag = data_manager.get_tag_dicts()

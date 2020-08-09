@@ -25,7 +25,7 @@ def train():
     LAYER_NUM = 1
     BATCH_SIZE = 256
 
-    data_manager = DataManager(SMALL)
+    data_manager = DataManager(TRAIN)
     warnings.filterwarnings("ignore")
 
     tag_to_idx, idx_to_tag = data_manager.get_tag_dicts()
@@ -35,8 +35,8 @@ def train():
     val_to_idx["UNK"] = len(val_to_idx)
     idx_to_val[len(val_to_idx) - 1] = "UNK"
 
-    train_split_idx = int(len(data_manager.get_data()) * 0.05)
-    validate_split_idx = int(len(data_manager.get_data()) * 0.06)
+    train_split_idx = int(len(data_manager.get_data()) * 0.08)
+    validate_split_idx = int(len(data_manager.get_data()) * 0.09)
 
     data_train = torch.Tensor(
         [
@@ -81,7 +81,7 @@ def train():
             False
         )
     )
-
+    # model = torch.load()
     loss_function = nn.NLLLoss()
     optimizer = optim.Adam(model.parameters())
 
@@ -190,8 +190,8 @@ def train():
                 f"Validation tag: loss {loss_sum_val/ep_cnt}, accuracy:{100*correct_val/cnt}"
             )
 
-    torch.save(model, f"D://data//model_attention_{epoch}.pickle")
-    # torch.save(model_val, "D://data//second_model_val.pickle")
+        torch.save(model, f"D://data//model_attention_{epoch}.pickle")
+        # torch.save(model_val, "D://data//second_model_val.pickle")
 
 
 if __name__ == "__main__":
