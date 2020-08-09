@@ -158,7 +158,7 @@ def train():
 
                 summary_writer.add_scalar("model_value: train loss", loss_val, global_step)
                 summary_writer.add_scalar(
-                    "model_value: accuracy", 100 * (correct_val / size), global_step
+                    "model_value: train accuracy", 100 * (correct_val / size), global_step
                 )
 
                 loss_val.backward()
@@ -197,7 +197,7 @@ def train():
                         desc=f"Epoch eval: {global_step//TIME_FOR_EVAL}",
                         unit="batches",
                     ):
-                        global_step_eval = global_step//TIME_FOR_EVAL + i_eval
+                        global_step_eval = (global_step//TIME_FOR_EVAL)*len(eval_data_loader) + i_eval
                         size_eval = int(sentence_eval.size(0))
                         size_sum_eval += size_eval
                         sentence_eval = sentence_eval.to(device)
