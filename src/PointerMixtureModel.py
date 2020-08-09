@@ -12,7 +12,6 @@ class PointerMixtureModel(nn.Module):
         embedding_dim_val,
         hidden_dim,
         layer_cnt,
-        for_val,
     ):
         super(PointerMixtureModel, self).__init__()
         self.hidden_dim = hidden_dim
@@ -38,10 +37,7 @@ class PointerMixtureModel(nn.Module):
 
         self.wg = nn.Linear(2 * hidden_dim, hidden_dim, bias=False)
         self.ws = nn.Linear(2 * hidden_dim, 1, bias=True)
-        if for_val:
-            self.final = nn.Linear(hidden_dim, vocab_size_val)
-        else:
-            self.final = nn.Linear(hidden_dim, vocab_size_tag)
+        self.final = nn.Linear(hidden_dim, vocab_size_val)
 
     def forward(self, sentence):
         embeds_tag = self.tag_embeddings(sentence[:, :, 0].long())
@@ -67,7 +63,9 @@ class PointerMixtureModel(nn.Module):
 
         st = torch.sigmoid(self.ws(torch.cat((last_h, ct), 1)))
 
-        if st - 0.5 > 0:
+        # Attention = True
+        # Pointer = False
+        if st > 0.5:
             return val, True
         else:
             return alfa, False
