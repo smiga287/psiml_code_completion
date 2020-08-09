@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class AttentionModel(nn.Module):
+class AtentionModel(nn.Module):
     def __init__(
         self,
         vocab_size_tag,
@@ -14,7 +14,7 @@ class AttentionModel(nn.Module):
         layer_cnt,
         for_val,
     ):
-        super(AttentionModel, self).__init__()
+        super(AtentionModel, self).__init__()
         self.hidden_dim = hidden_dim
 
         self.tag_embeddings = nn.Embedding(vocab_size_tag, embedding_dim_tag)

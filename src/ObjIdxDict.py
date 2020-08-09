@@ -62,6 +62,9 @@ class TagIdxDicts(ObjIdxDicts):
                 idx_to_tag[idx] = (tag, has_children, has_sibling)
                 idx += 1
 
+        tag_to_idx['UNK'] = len(tag_to_idx)
+        idx_to_tag[len(idx_to_tag)] = "UNK"
+
         return tag_to_idx, idx_to_tag
 
 
