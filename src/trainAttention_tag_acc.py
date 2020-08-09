@@ -244,7 +244,7 @@ def train():
 
                     summary_writer.add_scalar("model_value: average evaluation loss", loss_sum_val/len(eval_data_loader), global_step//TIME_FOR_EVAL)
                     summary_writer.add_scalar(
-                        "model_value: evaluation accuracy", 100 * (correct_sum_val / size_sum_eval), global_step//TIME_FOR_EVAL
+                        "model_value: average evaluation accuracy", 100 * (correct_sum_val / size_sum_eval), global_step//TIME_FOR_EVAL
                     )
 
                     tag = f"EVAL: tag accuracy: {100 * (correct_sum_tag / size_sum_eval)}, tag loss: {loss_sum_tag/len(eval_data_loader)}, "
