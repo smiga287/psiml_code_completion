@@ -25,13 +25,13 @@ def train():
     LAYER_NUM = 1
     BATCH_SIZE = 256
 
-    data_manager_train = DataManager(SMALL)
-    data_manager_eval = DataManager(SMALL)
+    data_manager_train = DataManager(TRAIN)
+    data_manager_eval = DataManager(TEST)
     warnings.filterwarnings("ignore")
 
     tag_to_idx, idx_to_tag = data_manager_train.get_tag_dicts()
     val_to_idx, idx_to_val = data_manager_train.get_val_dicts()
-
+    
     
     validate_split_idx = int(len(data_manager_eval.get_data()) * 0.04) # 2000 za eval
 
@@ -165,7 +165,7 @@ def train():
                 nn.utils.clip_grad_value_(model_val.parameters(), 5.0)
                 optimizer_val.step()
 
-            if (i+1) % 20 == 0:
+            if (i+1) % 200 == 0:
                 tag = f"TRAIN tag accuracy: {100 * (correct_tag / size)}, tag loss: {loss_tag}, "
                 val = f"val accuracy: {100 * (correct_val / size)}, val loss: {loss_val}\n"
 
@@ -173,7 +173,7 @@ def train():
                     log.write(tag)
                     log.write(val)
                 
-            TIME_FOR_EVAL = 25
+            TIME_FOR_EVAL = 2500
             if (i + 1) % TIME_FOR_EVAL == 0:
                 #evaluation
                 torch.save(model_tag, f"D://data//models//tag//budala_{model_iter}.pickle")
