@@ -37,8 +37,8 @@ def train():
     tag_to_idx, idx_to_tag = data_manager.get_tag_dicts()
     val_to_idx, idx_to_val = data_manager.get_val_dicts()
 
-    train_split_idx = int(len(data_manager.get_data()) * 0.08)
-    validate_split_idx = int(len(data_manager.get_data()) * 0.09)
+    train_split_idx = int(len(data_manager.get_data()) * 0.8)
+    validate_split_idx = int(len(data_manager.get_data()) * 0.9)
 
     data_train = torch.Tensor(
         [
@@ -124,27 +124,37 @@ def train():
             # creating mask (don't wont to predict batches where there is no right answer)
             unk_idx = val_to_idx["UNK"]
             mask_unk = y[:, 1] != unk_idx  # mask for all y val that are not UNK
-            y_pt = torch.zeros(BATCH_SIZE)
-            mask_pt = torch.ones(BATCH_SIZE)
-            for i, batch in enumerate(sentence[:,:,2]):
+            y_pt = torch.zeros(BATCH_SIZE, sentence.size(1)-1)
+            mask_pt = torch.zeros(BATCH_SIZE).bool()
+            for i, batch in enumerate(sentence[:,1:,2]):
                 for j, tmp in enumerate(reversed(batch)):
                     if tmp == y[i, 2]:
-                        y_pt[i,j] = 1
-                        mask_pt[i]= sentence.size(1)-1-j
+                        y_pt[i,y_pt.size(1)-1-j] = 1
+                        mask_pt[i]= 1
                         break
-            
-            mask = mask_pt & mask_unk
+            y_at = F.one_hot(y[:,1].long())
+            mask_at = y[:,1].long() == unk_idx
+            y_at[mask_at,unk_idx] = 0
+            mask = (mask_pt | mask_unk)>0
 
             sentence = sentence.to(device=device)
             st, y_pred_val, y_pred_pt = model(sentence[mask,:,:-1])
             y = y.to(device=device)
 
-            loss = st*loss_function(y_pred_val,y[mask,1].long()) + (1-st)*F.cross_entropy(y_pred_pt, y_pt[mask])
+            loss = st*nn.BCELoss()(y_pred_val.float(),y_at[mask].float()) 
+            loss+= (1-st)*nn.BCELoss()(y_pred_pt.float(), y_pt[mask].float())
+            loss = loss.mean()
             correct=0
-            if(st>0.5):
-                correct= (y_pred_val.argmax(dim=1) == y[:, 1]).sum().item()
-            else:
-                correct= (y_pred_pt.argmax(dim=1) == y_pt).sum().item()
+            mask_st = st>0
+            mask_st.squeeze_(dim=1)
+            y_tmp = y[mask]
+            mask_correct = y[mask,1] != unk_idx
+            mask_correct = mask_correct[mask_st]
+            correct= (y_pred_val[mask_correct].argmax(dim=1) == y_tmp[mask_correct, 1]).sum().item()
+        
+            mask_correct = mask_pt[mask]>0
+            mask_correct = mask_correct[mask_st]
+            correct+= (y_pred_pt[mask_correct].argmax(dim=1) == (y_pt[mask])[mask_correct]).sum().item()
 
             summary_writer.add_scalar("model_pt: train loss", loss_tag, global_step)
             summary_writer.add_scalar(

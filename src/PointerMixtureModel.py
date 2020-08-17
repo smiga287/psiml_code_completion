@@ -59,8 +59,8 @@ class PointerMixtureModel(nn.Module):
         Gt = torch.tanh(Gt)
 
         val = self.final(Gt)
-        val = F.log_softmax(val, dim=1)
+        val = F.softmax(val, dim=1)
 
         st = torch.sigmoid(self.ws(torch.cat((last_h, ct), 1)))
 
-        return st, val, alfa.log()
+        return st, val, alfa.squeeze(dim=2)
