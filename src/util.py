@@ -1,7 +1,7 @@
 from functools import wraps
 from time import time
 
-DATA_ROOT = "D://data//"
+DATA_ROOT = "C:\\Users\\novak\\Desktop\\psiml project\\psiml_code_completion\\data\\"
 
 TRAIN = "python100k"
 TEST = "python50k"

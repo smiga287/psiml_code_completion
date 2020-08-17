@@ -63,9 +63,4 @@ class PointerMixtureModel(nn.Module):
 
         st = torch.sigmoid(self.ws(torch.cat((last_h, ct), 1)))
 
-        # Attention = True
-        # Pointer = False
-        if st > 0.5:
-            return val, True
-        else:
-            return alfa, False
+        return st, val, alfa.log()

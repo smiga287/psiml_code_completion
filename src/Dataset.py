@@ -19,7 +19,7 @@ class DatasetPointer(TorchDataset):
         # (tag_idx, val_idx, data_idx)
         self.data = torch.Tensor(
             [
-                (tag_idx, val_idx, torch.Tensor([data_idx]))
+                (tag_idx, val_idx, torch.Tensor(values[data_idx]))
                 for data_idx, (tag_idx, val_idx) in enumerate(data)
             ]
         )
