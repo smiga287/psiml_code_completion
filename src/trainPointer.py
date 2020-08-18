@@ -38,7 +38,7 @@ def train():
     val_to_idx, idx_to_val = data_manager.get_val_dicts()
 
     train_split_idx = int(len(data_manager.get_data()) * 0.8)
-    validate_split_idx = int(len(data_manager.get_data()) * 0.9)
+    validate_split_idx = int(len(data_manager.get_data()) * 0.81)
 
     data_train = torch.Tensor(
         [
@@ -73,7 +73,7 @@ def train():
         BATCH_SIZE,
         shuffle=True,
         drop_last=True,
-        num_workers=8,
+        num_workers=4,
     )
 
     eval_data_loader = torch.utils.data.DataLoader(
@@ -81,7 +81,7 @@ def train():
         BATCH_SIZE,
         shuffle=False,
         drop_last=True,
-        num_workers=8,
+        num_workers=4,
     )
 
     model = nn.DataParallel(
@@ -95,7 +95,7 @@ def train():
         )
     )
     # model = torch.load()
-    loss_function = nn.NLLLoss()
+    # loss_function = nn.NLLLoss()
     optimizer = optim.Adam(model.parameters())
 
     # -----------putting model on GPU--------------
@@ -119,18 +119,16 @@ def train():
             model.zero_grad()
             model.train()
 
-            # **********************TODO******************debug training and change eval**************************************************************
-
             # creating mask (don't wont to predict batches where there is no right answer)
             unk_idx = val_to_idx["UNK"]
             mask_unk = y[:, 1] != unk_idx  # mask for all y val that are not UNK
             y_pt = torch.zeros(BATCH_SIZE, sentence.size(1)-1)
             mask_pt = torch.zeros(BATCH_SIZE).bool()
-            for i, batch in enumerate(sentence[:,1:,2]):
+            for o, batch in enumerate(sentence[:,1:,2]):
                 for j, tmp in enumerate(reversed(batch)):
-                    if tmp == y[i, 2]:
-                        y_pt[i,y_pt.size(1)-1-j] = 1
-                        mask_pt[i]= 1
+                    if tmp == y[o, 2]:
+                        y_pt[o,y_pt.size(1)-1-j] = 1
+                        mask_pt[o]= 1
                         break
             y_at = F.one_hot(y[:,1].long())
             mask_at = y[:,1].long() == unk_idx
@@ -154,23 +152,24 @@ def train():
         
             mask_correct = mask_pt[mask]>0
             mask_correct = mask_correct[mask_st]
-            correct+= (y_pred_pt[mask_correct].argmax(dim=1) == (y_pt[mask])[mask_correct]).sum().item()
+            y_pt_masked= y_pt[mask]
+            correct+= (y_pred_pt[mask_correct].argmax(dim=1) == y_pt_masked[mask_correct].argmax(dim=1)).sum().item()
 
-            summary_writer.add_scalar("model_pt: train loss", loss_tag, global_step)
+            summary_writer.add_scalar("model_pt: train loss", loss, global_step)
             summary_writer.add_scalar(
-                "model_pt: accuracy", 100 * (correct_tag / size), global_step
+                "model_pt: accuracy", 100 * (correct / size), global_step
             )
-
+            
             loss.backward()
             nn.utils.clip_grad_value_(model.parameters(), 5.0)
             optimizer.step()
 
-            if (i+1) % 200 == 0:
-                val = f"val_pt accuracy: {100 * (correct / size)}, val_pt loss: {loss}\n"
+            if (i+1) % 250 == 0:
+                val = f"TRAIN: val_pt accuracy: {100 * (correct / size)}, val_pt loss: {loss}\n"
                 with open(f'{DATA_ROOT}log_pt.txt', 'a') as log:
                     log.write(val)
                 
-            TIME_FOR_EVAL = 2500
+            TIME_FOR_EVAL = 2000
             if (i + 1) % TIME_FOR_EVAL == 0:
                 #evaluation
                 torch.save(model, f"{DATA_ROOT}models//pt//budala_{model_iter}.pickle")
@@ -196,54 +195,56 @@ def train():
 
                         unk_idx = val_to_idx["UNK"]
                         mask_unk = y_eval[:, 1] != unk_idx
+                        y_pt = torch.zeros(BATCH_SIZE, sentence_eval.size(1)-1)
+                        mask_pt = torch.zeros(BATCH_SIZE).bool()
+                        for o, batch in enumerate(sentence_eval[:,1:,2]):
+                            for j, tmp in enumerate(reversed(batch)):
+                                if tmp == y_eval[o, 2]:
+                                    y_pt[o,y_pt.size(1)-1-j] = 1
+                                    mask_pt[o]= 1
+                                    break
+                        y_at = F.one_hot(y_eval[:,1].long())
+                        mask_at = y_eval[:,1].long() == unk_idx
+                        y_at[mask_at,unk_idx] = 0
+                        mask = (mask_pt | mask_unk)>0
 
-                        #tag
-                        sentence_tag = sentence_eval.to(device)
-                        y_pred_tag = model_tag(sentence_tag)
-                        y_eval = y_eval.to(device)
-                        
-                        correct_tag = (y_pred_tag.argmax(dim=1) == y_eval[:, 0]).sum().item()
-                        loss_tag = loss_function(y_pred_tag, y_eval[:, 0].long())
-                        
-                        correct_sum_tag += correct_tag
-                        loss_sum_tag += loss_tag
 
-                        summary_writer.add_scalar("model_tag: evaluation loss", loss_tag, global_step_eval)
+                        st, y_pred_val, y_pred_pt = model(sentence_eval[mask,:,:-1])
+                        y_eval = y.to(device=device)
+
+
+                        loss = st*nn.BCELoss()(y_pred_val.float(),y_at[mask].float()) 
+                        loss+= (1-st)*nn.BCELoss()(y_pred_pt.float(), y_pt[mask].float())
+                        loss = loss.mean()
+                        correct=0
+                        mask_st = st>0
+                        mask_st.squeeze_(dim=1)
+                        y_tmp = y_eval[mask]
+                        mask_correct = y_eval[mask,1] != unk_idx
+                        mask_correct = mask_correct[mask_st]
+                        correct= (y_pred_val[mask_correct].argmax(dim=1) == y_tmp[mask_correct, 1]).sum().item()
+                    
+                        mask_correct = mask_pt[mask]>0
+                        mask_correct = mask_correct[mask_st]
+                        y_pt_masked= y_pt[mask]
+                        correct+= (y_pred_pt[mask_correct].argmax(dim=1) == y_pt_masked[mask_correct].argmax(dim=1)).sum().item()
+
+                        correct_sum += correct
+                        loss_sum += loss
+                        
+                        summary_writer.add_scalar("model_pt: evaluation loss", loss, global_step_eval)
                         summary_writer.add_scalar(
-                            "model_tag: evaluation accuracy", 100 * (correct_tag / size_eval), global_step_eval
+                            "model_pt: evaluation accuracy", 100 * (correct / size_eval), global_step_eval
                         )
 
-                        if mask_unk.sum()>0:
-                            sentence_eval = sentence_eval[mask_unk].to(device)
-                            y_pred_val = model_val(sentence_eval)
-                            y_eval = y_eval.to(device)
-
-                            correct_val = (y_pred_val.argmax(dim=1) == y_eval[mask_unk, 1]).sum().item()
-                            loss_val = loss_function(y_pred_val, y_eval[mask_unk, 1].long())
-
-                            correct_sum_val += correct_val
-                            loss_sum_val += loss_val
-                            
-                            summary_writer.add_scalar("model_value: evaluation loss", loss_val, global_step_eval)
-                            summary_writer.add_scalar(
-                                "model_value: evaluation accuracy", 100 * (correct_val / size_eval), global_step_eval
-                            )
-
-                    summary_writer.add_scalar("model_tag: average evaluation loss", loss_sum_tag/len(eval_data_loader), global_step//TIME_FOR_EVAL)
+                    summary_writer.add_scalar("model_pt: average evaluation loss", loss_sum/len(eval_data_loader), global_step//TIME_FOR_EVAL)
                     summary_writer.add_scalar(
-                        "model_tag: average evaluation accuracy", 100 * (correct_sum_tag / size_sum_eval), global_step//TIME_FOR_EVAL
-                    ) 
-
-                    summary_writer.add_scalar("model_value: average evaluation loss", loss_sum_val/len(eval_data_loader), global_step//TIME_FOR_EVAL)
-                    summary_writer.add_scalar(
-                        "model_value: average evaluation accuracy", 100 * (correct_sum_val / size_sum_eval), global_step//TIME_FOR_EVAL
+                        "model_pt: average evaluation accuracy", 100 * (correct_sum / size_sum_eval), global_step//TIME_FOR_EVAL
                     )
 
-                    tag = f"EVAL: tag accuracy: {100 * (correct_sum_tag / size_sum_eval)}, tag loss: {loss_sum_tag/len(eval_data_loader)}, "
-                    val = f"val accuracy: {100 * (correct_sum_val / size_sum_eval)}, val loss: {loss_sum_val/len(eval_data_loader)}\n"
+                    val = f"EVAL: val_pt accuracy: {100 * (correct_sum / size_sum_eval)}, val_pt loss: {loss_sum/len(eval_data_loader)}\n"
 
-                    with open(f'{DATA_ROOT}log.txt', 'a') as log:
-                        log.write(tag)
+                    with open(f'{DATA_ROOT}log_pt.txt', 'a') as log:
                         log.write(val)
 
 
